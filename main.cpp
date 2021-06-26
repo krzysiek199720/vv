@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <shellapi.h>
 #include <iostream>
 
 #include "archdef.h"
@@ -9,7 +10,7 @@
 inline void DebugPrint(const char* str)
 {
 #if DEBUG
-    std::cout << str << '\0';
+    std::cout << str << '\n';
 #endif
 }
 
@@ -18,29 +19,29 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
     LRESULT result = 0;
     switch(message) {
         case WM_ACTIVATEAPP: {
-            if(wParam) DebugPrint("Activate app\n");
-            else DebugPrint("Deactivate app\n");
+            if(wParam) DebugPrint("Activate app");
+            else DebugPrint("Deactivate app");
         } break;
 
         case WM_CLOSE: {
-            DebugPrint("WM_CLOSE\n");
+            DebugPrint("WM_CLOSE");
             // TODO do some on close saving
 
             DestroyWindow(window);
         } break;
 
         case WM_DESTROY: {
-            DebugPrint("WM_DESTROY\n");
+            DebugPrint("WM_DESTROY");
         } break;
 
         case WM_SYSKEYUP:
         case WM_SYSKEYDOWN:
         case WM_KEYUP:{
-            DebugPrint("KEYBOARD KEY\n");
+            DebugPrint("KEYBOARD KEY");
         } break;
 
         case WM_KEYDOWN: {
-            DebugPrint("KEYBOARD KEY DOWN\n");
+            DebugPrint("KEYBOARD KEY DOWN");
             bool isDown = (lParam & (1 << 31)) == 0;
             bool wasDown = (lParam & (1 << 30)) != 0;
             if(!wasDown)
@@ -64,7 +65,20 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         } break;
 
         case WM_SIZE: {
-            DebugPrint("WM_SIZE\n");
+            DebugPrint("WM_SIZE");
+        } break;
+
+        case WM_DROPFILES: {
+            DebugPrint("WM_DROPFILES");
+            char filename[1024];
+            UINT nCount = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, 0, 0);
+            if(nCount > 1)
+            {
+                DebugPrint("Too many files");
+                break;
+            }
+            DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
+            DebugPrint(filename);
         } break;
 
         default: {
@@ -105,7 +119,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         );
         if(windowHandle)
         {
-            DebugPrint("window created\n");
+            DebugPrint("window created");
             //window created successfully
             MSG message;
             while(GetMessage( &message, windowHandle, 0, 0 ) > 0)
@@ -115,11 +129,11 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
             }
         } else
         {
-            DebugPrint("no window created\n");
+            DebugPrint("no window created");
         }
     } else
     {
-        DebugPrint("no class registered\n");
+        DebugPrint("no class registered");
     }
 
     return 0;
