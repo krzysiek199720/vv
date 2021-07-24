@@ -50,7 +50,7 @@ void palette::Palette::setImage(const char * filename)
 }
 
 palette::Palette::Palette(uint32 width, uint32 height)
-    :image(Image{}), size(Size{width, height}), processed(false)
+    :image(Image{}), size(Size{width, height})
 {
     Memory memory = memoryAlloc(width*height*CHANNELS);
     if(memory.address == 0)
@@ -88,4 +88,5 @@ void palette::Palette::setSize(Size newSize) {
         throw std::bad_alloc();
     }
     this->paletteMemory = newMemory;
+    processed = false;
 }

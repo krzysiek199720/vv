@@ -6,9 +6,6 @@
 
 #include "archdef.h"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-
 inline void DebugPrint(const char* str)
 {
 #if DEBUG
@@ -46,5 +43,7 @@ struct Size
 #define CTRL    0b00000001
 #define SHIFT   0b00000010
 #define TAB     0b00000100
+
+
 
 #endif //VV_MAIN_H

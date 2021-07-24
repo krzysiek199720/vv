@@ -6,9 +6,18 @@
 // FIXME global
 std::unique_ptr<palette::Palette> defPalette;
 BITMAPINFO bitmapInfo;
+
 uint8 pressedCK = 0; // pressed control keys
-#define isPressedCK(key) (pressedCK & key)
+#define isPressedCK(key) (pressedCK & (key))
+
 uint8 globalAlpha = 0xFF;
+
+Size resolutions[2] = {
+        {1280, 720},
+        {1920, 1080}
+};
+uint8 resIndex = 0;
+
 
 Memory memoryAlloc(uint32 size)
 {
@@ -66,7 +75,17 @@ void resizePaletteAndHdc(Size size)
     bitmapInfo.bmiHeader.biPlanes = 1;
     bitmapInfo.bmiHeader.biBitCount = 32;
     bitmapInfo.bmiHeader.biCompression = BI_RGB;
+}
 
+void resizeWindow(HWND window, Size resolution)
+{
+    MoveWindow(
+            window,
+            0, 0,
+            resolution.width, resolution.height,
+            false
+    );
+    resizePaletteAndHdc(resolution);
 }
 
 void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
@@ -105,22 +124,48 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 pressedCK &= ~(TAB);
         }break;
 
-        case VK_UP:{
+        case VK_ADD:
+        case VK_OEM_PLUS:{
             if(isDown && !wasDown && isPressedCK(CTRL))
+            {
                 if(globalAlpha != 0xFF)
                 {
                     globalAlpha += 0xF;
                     SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
                 }
+            }
+            if(isDown && !wasDown && isPressedCK(SHIFT))
+            {
+//                FIXME change this if resolution stuff chnages
+                if(resIndex == 0)
+                {
+                    resIndex = 1;
+                    resizeWindow(window, resolutions[resIndex]);
+                    InvalidateRect(window, 0, FALSE);
+                }
+            }
         }break;
-        case VK_DOWN:{
-            if(isDown && !wasDown && isPressedCK(CTRL))
-                if(globalAlpha != 0x0)
+        case VK_SUBTRACT:
+        case VK_OEM_MINUS: {
+            if (isDown && !wasDown && isPressedCK(CTRL))
+            {
+                if (globalAlpha != 0x0)
                 {
                     globalAlpha -= 0xF;
-                            SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
-                                   }
-        }      break;
+                    SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
+                }
+            }
+            if(isDown && !wasDown && isPressedCK(SHIFT))
+            {
+//                FIXME change this if resolution stuff chnages
+                if(resIndex == 1)
+                {
+                    resIndex = 0;
+                    resizeWindow(window, resolutions[resIndex]);
+                    InvalidateRect(window, 0, FALSE);
+                }
+            }
+        }break;
     }
 
 }
@@ -200,7 +245,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                    PSTR CommandLine, INT ShowCode)
 {
-    defPalette = std::make_unique<palette::Palette>(WINDOW_WIDTH, WINDOW_HEIGHT);
+    defPalette = std::make_unique<palette::Palette>(
+            resolutions[resIndex].width, resolutions[resIndex].height);
     bitmapInfo = BITMAPINFO{0};
 
     WNDCLASSA windowClass = {};
@@ -220,8 +266,8 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                 WS_VISIBLE|WS_POPUPWINDOW, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
                 0,
                 0,
-                WINDOW_WIDTH,
-                WINDOW_HEIGHT,
+                resolutions[resIndex].width,
+                resolutions[resIndex].height,
                 0,
                 0,
                 Instance,
@@ -233,7 +279,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
             //window created successfully
             SetWindowLong(windowHandle, GWL_EXSTYLE,
                           GetWindowLong(windowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
-            resizePaletteAndHdc({WINDOW_WIDTH, WINDOW_HEIGHT});
+            resizePaletteAndHdc(resolutions[resIndex]);
 
             MSG message;
             while(GetMessage( &message, windowHandle, 0, 0 ) > 0)
