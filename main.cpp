@@ -6,6 +6,8 @@
 // FIXME global
 std::unique_ptr<palette::Palette> defPalette;
 BITMAPINFO bitmapInfo;
+uint8 pressedCK = 0; // pressed control keys
+#define isPressedCK(key) (pressedCK & key)
 
 Memory memoryAlloc(uint32 size)
 {
@@ -66,6 +68,45 @@ void resizePaletteAndHdc(Size size)
 
 }
 
+void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
+{
+    bool isDown = (lParam & (1 << 31)) == 0;
+    bool wasDown = (lParam & (1 << 30)) != 0;
+
+    // key valid to process
+    switch(wParam)
+    {
+        case VK_ESCAPE: {
+            SendMessageA(window, WM_CLOSE, 0, 0);
+        } break;
+
+        //TODO DEBUG - remove
+        case VK_RETURN: {
+            if(isDown && !wasDown)
+                InvalidateRect(window, 0, FALSE);
+        } break;
+        case VK_CONTROL:{
+            if(isDown)
+                pressedCK |= CTRL;
+            else
+                pressedCK &= ~(CTRL);
+        }break;
+        case VK_SHIFT:{
+            if(isDown)
+                pressedCK |= SHIFT;
+            else
+                pressedCK &= ~(SHIFT);
+        }break;
+        case VK_TAB:{
+            if(isDown)
+                pressedCK |= TAB;
+            else
+                pressedCK &= ~(TAB);
+        }break;
+    }
+
+}
+
 LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT result = 0;
@@ -88,29 +129,9 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             DebugPrint("WM_DESTROY");
         } break;
 
-        case WM_SYSKEYUP:
-        case WM_SYSKEYDOWN:
-        case WM_KEYUP:{
-            DebugPrint("KEYBOARD KEY");
-        } break;
-
+        case WM_KEYUP:
         case WM_KEYDOWN: {
-            DebugPrint("KEYBOARD KEY DOWN");
-            bool isDown = (lParam & (1 << 31)) == 0;
-            bool wasDown = (lParam & (1 << 30)) != 0;
-            if(!wasDown)
-            {
-                // key valid to process
-                switch(wParam)
-                {
-                    case VK_ESCAPE: {
-                        SendMessageA(window, WM_CLOSE, 0, 0);
-                    } break;
-                    case VK_RETURN: {
-                        InvalidateRect(window, NULL, FALSE);
-                    } break;
-                }
-            }
+            processKeys(window, wParam, lParam);
         } break;
 
         case WM_PAINT: {
@@ -141,8 +162,14 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             DebugPrint(filename);
             defPalette->setImage(filename);
 
-            InvalidateRect(window, NULL, FALSE);
+            InvalidateRect(window, 0, FALSE);
         } break;
+
+        case WM_NCHITTEST: {
+            LRESULT hit = DefWindowProc(window, message, wParam, lParam);
+            if (isPressedCK(CTRL) && hit == HTCLIENT) hit = HTCAPTION;
+            return hit;
+        }break;
 
         default: {
             result = DefWindowProcA(window, message, wParam, lParam);
