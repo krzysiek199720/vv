@@ -4,9 +4,19 @@
 
 #include "../libraries/stb_image_resize.h"
 
+#define RGB2BGR(a_ulColor) (a_ulColor & 0xFF000000) | ((a_ulColor & 0xFF0000) >> 16) | (a_ulColor & 0x00FF00) | ((a_ulColor & 0x0000FF) << 16)
+
 void * palette::Palette::getImage()
 {
     DebugPrint("getImage()");
+    if(image.image == 0)
+    {
+        DebugPrint("getImage(): NO image");
+        return 0;
+    }
+
+    if(processed)
+        return paletteMemory.address;
 
     int res = stbir_resize_uint8(
             (const unsigned char*) image.image, image.size.width, image.size.height, 0,
@@ -18,16 +28,29 @@ void * palette::Palette::getImage()
         return 0;
     }
     DebugPrint("Resize success");
+
+    // FIXME library doesnt support BGR, and windows RGB
+    // What to do?  Can i make windows use RGB?
+    uint32* pixel;
+    for(uint32 i = 0; i < (size.width*size.height); ++i)
+    {
+        pixel = &((uint32*)paletteMemory.address)[i];
+        *pixel = (uint32)RGB2BGR(*pixel);
+    }
+
+    processed = true;
+
     return paletteMemory.address;
 }
 
 void palette::Palette::setImage(const char * filename)
 {
     image.setImage(filename);
+    processed = false;
 }
 
 palette::Palette::Palette(uint32 width, uint32 height)
-    :image(Image{}), size(Size{width, height})
+    :image(Image{}), size(Size{width, height}), processed(false)
 {
     Memory memory = memoryAlloc(width*height*CHANNELS);
     if(memory.address == 0)
@@ -48,10 +71,13 @@ Size palette::Palette::getSize() {
 }
 
 void palette::Palette::setSize(Size newSize) {
+    if(newSize.width == size.width
+       && newSize.height == size.height)
+        return;
+
     if(newSize.width < 1 && newSize.height < 1)
     {
         DebugPrint("SetPaletteSize wrong newSize");
-        throw std::bad_alloc();
     }
     this->size = newSize;
     memoryFree(&this->paletteMemory);

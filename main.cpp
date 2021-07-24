@@ -1,6 +1,3 @@
-#include <windows.h>
-#include <shellapi.h>
-#include <iostream>
 #include <memory>
 
 #include "main.h"
@@ -8,6 +5,7 @@
 
 // FIXME global
 std::unique_ptr<palette::Palette> defPalette;
+BITMAPINFO bitmapInfo;
 
 Memory memoryAlloc(uint32 size)
 {
@@ -37,6 +35,37 @@ bool memoryFree(Memory* memory)
     return true;
 }
 
+void paintToScreen(HDC hdc, void* address, Size size)
+{
+    int stretchResult = StretchDIBits(
+            hdc,
+            0, 0, size.width, size.height,
+            0, 0, size.width, size.height,
+            address,
+            &bitmapInfo,
+            DIB_RGB_COLORS,
+            SRCCOPY
+    );
+    if(stretchResult == 0)
+    {
+        DebugPrint("paintToScreen: No lines scanned to screen");
+        return;
+    }
+}
+
+void resizePaletteAndHdc(Size size)
+{
+    defPalette->setSize(size);
+
+    bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
+    bitmapInfo.bmiHeader.biWidth = size.width;
+    bitmapInfo.bmiHeader.biHeight = -size.height; //negative is top-down, positive is bottom-up
+    bitmapInfo.bmiHeader.biPlanes = 1;
+    bitmapInfo.bmiHeader.biBitCount = 32;
+    bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+}
+
 LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT result = 0;
@@ -44,6 +73,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_ACTIVATEAPP: {
             if(wParam) DebugPrint("Activate app");
             else DebugPrint("Deactivate app");
+//            if(defPalette->image.image != 0)
+//                paintToScreen(GetDC(0), defPalette->getImage(), defPalette->getSize());
         } break;
 
         case WM_CLOSE: {
@@ -75,16 +106,20 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                     case VK_ESCAPE: {
                         SendMessageA(window, WM_CLOSE, 0, 0);
                     } break;
+                    case VK_RETURN: {
+                        InvalidateRect(window, NULL, FALSE);
+                    } break;
                 }
             }
         } break;
 
         case WM_PAINT: {
-            //TODO repaint window - eg after resize
             DebugPrint("WM_PAINT");
+
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
-            PatBlt(deviceContext, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, BLACKNESS);
+//            if(defPalette->image.image != 0)
+                paintToScreen(deviceContext, defPalette->getImage(), defPalette->getSize());
             EndPaint(window, &paintStruct);
         } break;
 
@@ -105,9 +140,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
             DebugPrint(filename);
             defPalette->setImage(filename);
-            //TODO tmp
-            defPalette->getImage();
-            // tmp
+
+            InvalidateRect(window, NULL, FALSE);
         } break;
 
         default: {
@@ -118,14 +152,14 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
     return result;
 }
 
-
 INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                    PSTR CommandLine, INT ShowCode)
 {
     defPalette = std::make_unique<palette::Palette>(WINDOW_WIDTH, WINDOW_HEIGHT);
+    bitmapInfo = BITMAPINFO{0};
 
     WNDCLASSA windowClass = {};
-    windowClass.style = CS_HREDRAW|CS_VREDRAW;
+    windowClass.style = 0;//CS_HREDRAW|CS_VREDRAW;
     windowClass.lpfnWndProc = MainWindowCallback;
     windowClass.hInstance = Instance;
     //windowClass.hIcon = ; //TODO add an icon
@@ -135,10 +169,10 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     if(RegisterClassA(&windowClass))
     {
         HWND windowHandle = CreateWindowExA(
-                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW,//|WS_EX_TOPMOST, // TODO WS_EX_LAYERED|WS_EX_NOACTIVATE -- ??
+                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_LAYERED|WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
-                WS_VISIBLE|WS_POPUP, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
+                WS_VISIBLE|WS_POPUPWINDOW, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
                 0,
                 0,
                 WINDOW_WIDTH,
@@ -152,6 +186,8 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         {
             DebugPrint("window created");
             //window created successfully
+            resizePaletteAndHdc({WINDOW_WIDTH, WINDOW_HEIGHT});
+
             MSG message;
             while(GetMessage( &message, windowHandle, 0, 0 ) > 0)
             {

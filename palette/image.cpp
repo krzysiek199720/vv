@@ -12,6 +12,7 @@ palette::Image::~Image() {
 }
 
 void palette::Image::setImage(const char * filename) {
+    stbi_image_free(this->image);
     int x,y,n;
     unsigned char *data = stbi_load(filename, &x, &y, &n, 4);
     if(data)

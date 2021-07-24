@@ -2,6 +2,7 @@
 #define VV_MAIN_H
 
 #include <iostream>
+#include <windows.h>
 
 #include "archdef.h"
 
@@ -12,6 +13,18 @@ inline void DebugPrint(const char* str)
 {
 #if DEBUG
     std::cout << str << '\n';
+#endif
+}
+inline void DebugPrint(uint32 number)
+{
+#if DEBUG
+    printf("%d\n", number);
+#endif
+}
+inline void DebugPrint(void* address)
+{
+#if DEBUG
+    printf("%p\n", address);
 #endif
 }
 
@@ -29,5 +42,6 @@ struct Size
     uint32 width;
     uint32 height;
 };
+
 
 #endif //VV_MAIN_H

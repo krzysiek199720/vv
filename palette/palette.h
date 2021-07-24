@@ -19,6 +19,7 @@ namespace palette
     protected:
         Size size;
         Memory paletteMemory;
+        bool processed;
     public:
         void* getImage();
         void setImage(const char *);
