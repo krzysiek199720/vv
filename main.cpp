@@ -8,6 +8,7 @@ std::unique_ptr<palette::Palette> defPalette;
 BITMAPINFO bitmapInfo;
 uint8 pressedCK = 0; // pressed control keys
 #define isPressedCK(key) (pressedCK & key)
+uint8 globalAlpha = 0xFF;
 
 Memory memoryAlloc(uint32 size)
 {
@@ -103,6 +104,23 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             else
                 pressedCK &= ~(TAB);
         }break;
+
+        case VK_UP:{
+            if(isDown && !wasDown && isPressedCK(CTRL))
+                if(globalAlpha != 0xFF)
+                {
+                    globalAlpha += 0xF;
+                    SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
+                }
+        }break;
+        case VK_DOWN:{
+            if(isDown && !wasDown && isPressedCK(CTRL))
+                if(globalAlpha != 0x0)
+                {
+                    globalAlpha -= 0xF;
+                            SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
+                                   }
+        }      break;
     }
 
 }
@@ -167,7 +185,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_NCHITTEST: {
             LRESULT hit = DefWindowProc(window, message, wParam, lParam);
-            if (isPressedCK(CTRL) && hit == HTCLIENT) hit = HTCAPTION;
+            if (isPressedCK(TAB) && hit == HTCLIENT) hit = HTCAPTION;
             return hit;
         }break;
 
@@ -186,7 +204,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     bitmapInfo = BITMAPINFO{0};
 
     WNDCLASSA windowClass = {};
-    windowClass.style = 0;//CS_HREDRAW|CS_VREDRAW;
+    windowClass.style = CS_HREDRAW|CS_VREDRAW;
     windowClass.lpfnWndProc = MainWindowCallback;
     windowClass.hInstance = Instance;
     //windowClass.hIcon = ; //TODO add an icon
@@ -213,6 +231,8 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         {
             DebugPrint("window created");
             //window created successfully
+            SetWindowLong(windowHandle, GWL_EXSTYLE,
+                          GetWindowLong(windowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
             resizePaletteAndHdc({WINDOW_WIDTH, WINDOW_HEIGHT});
 
             MSG message;
