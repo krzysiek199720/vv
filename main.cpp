@@ -1,17 +1,40 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <iostream>
+#include <memory>
 
-#include "archdef.h"
+#include "main.h"
+#include "palette/palette.h"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
+// FIXME global
+std::unique_ptr<palette::Palette> defPalette;
 
-inline void DebugPrint(const char* str)
+Memory memoryAlloc(uint32 size)
 {
-#if DEBUG
-    std::cout << str << '\n';
-#endif
+    Memory memory = {0};
+
+    void* resAdd = VirtualAlloc(
+            0,
+            size,
+            MEM_COMMIT,
+            PAGE_READWRITE
+    );
+
+    if(resAdd)
+    {
+        memory.address = resAdd;
+        memory.size = size;
+    }
+    else
+        DebugPrint("VirtualAlloc failed");
+
+    return memory;
+}
+bool memoryFree(Memory* memory)
+{
+    if(memory->address)
+        return VirtualFree(memory->address, memory->size, MEM_RELEASE);
+    return true;
 }
 
 LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
@@ -58,6 +81,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_PAINT: {
             //TODO repaint window - eg after resize
+            DebugPrint("WM_PAINT");
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
             PatBlt(deviceContext, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, BLACKNESS);
@@ -66,6 +90,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_SIZE: {
             DebugPrint("WM_SIZE");
+
         } break;
 
         case WM_DROPFILES: {
@@ -79,6 +104,10 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             }
             DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
             DebugPrint(filename);
+            defPalette->setImage(filename);
+            //TODO tmp
+            defPalette->getImage();
+            // tmp
         } break;
 
         default: {
@@ -93,6 +122,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                    PSTR CommandLine, INT ShowCode)
 {
+    defPalette = std::make_unique<palette::Palette>(WINDOW_WIDTH, WINDOW_HEIGHT);
+
     WNDCLASSA windowClass = {};
     windowClass.style = CS_HREDRAW|CS_VREDRAW;
     windowClass.lpfnWndProc = MainWindowCallback;
@@ -104,7 +135,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     if(RegisterClassA(&windowClass))
     {
         HWND windowHandle = CreateWindowExA(
-                WS_EX_ACCEPTFILES,
+                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW,//|WS_EX_TOPMOST, // TODO WS_EX_LAYERED|WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
                 WS_VISIBLE|WS_POPUP, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
