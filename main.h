@@ -47,16 +47,10 @@ struct Memory
 Memory memoryAlloc(uint32 size);
 bool memoryFree(Memory*);
 
-struct Size
+struct Vector2
 {
-    int32 width;
-    int32 height;
+    int32 x;
+    int32 y;
 };
-
-#define CTRL    0b00000001
-#define SHIFT   0b00000010
-#define TAB     0b00000100
-
-
 
 #endif //VV_MAIN_H

@@ -12,11 +12,16 @@ namespace palette
         Image();
         ~Image();
     public:
-        Size size;
         uint32 imageChannels;
-        void* image;
+        Vector2 offset;
+    protected:
+        Vector2 sizeRaw;
+        void* imageRaw;
     public:
         void setImage(const char *);
+        void setImageOffset(Vector2);
+        void* getImageRaw();
+        void* getImageRaw(Vector2*); // it returns both address and sizeRaw
     };
 }
 

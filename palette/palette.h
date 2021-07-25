@@ -14,16 +14,20 @@ namespace palette
         ~Palette();
     public:
         Image image;
+        Vector2 offset;
     protected:
-        Size size;
+        Vector2 size;
         Memory paletteMemory;
         bool processed = false;
     public:
         void* getImage();
         void setImage(const char *);
 
-        void setSize(Size);
-        Size getSize();
+        void setSize(Vector2);
+        Vector2 getSize();
+
+        void moveImage(Vector2);
+        void movePalette(Vector2);
     };
 }
 

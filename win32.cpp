@@ -1,3 +1,4 @@
+#include <windowsx.h>
 #include "win32.h"
 
 Memory memoryAlloc(uint32 size)
@@ -28,7 +29,7 @@ bool memoryFree(Memory* memory)
     return true;
 }
 
-void paintToScreen(HDC hdc, void* address, Size size)
+void paintToScreen(HDC hdc, void* address, Vector2 size)
 {
     HDC memDc = CreateCompatibleDC(hdc);
 
@@ -36,44 +37,50 @@ void paintToScreen(HDC hdc, void* address, Size size)
     HBITMAP newBitmap = CreateDIBSection(memDc, &bitmapInfo,
                                          DIB_RGB_COLORS, &DibBits, 0, 0);
 
-    memcpy(DibBits, address, (size.width*size.height*CHANNELS));
+    memcpy(DibBits, address, (size.x * size.y * CHANNELS));
 
     SelectObject(memDc, newBitmap);
 
     TransparentBlt(
             hdc,
-            0, 0, size.width, size.height,
+            0, 0, size.x, size.y,
             memDc,
-            0, 0, size.width, size.height,
+            0, 0, size.x, size.y,
             0xFF000000
     );
 
     DeleteDC(memDc);
 }
 
-void resizePaletteAndHdc(Size size)
+void resizePaletteAndHdc(Vector2 size)
 {
     defPalette->setSize(size);
 
     bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
-    bitmapInfo.bmiHeader.biWidth = size.width;
-    bitmapInfo.bmiHeader.biHeight = -size.height; //negative is top-down, positive is bottom-up
+    bitmapInfo.bmiHeader.biWidth = size.x;
+    bitmapInfo.bmiHeader.biHeight = -size.y; //negative is top-down, positive is bottom-up
     bitmapInfo.bmiHeader.biPlanes = 1;
     bitmapInfo.bmiHeader.biBitCount = 32;
     bitmapInfo.bmiHeader.biCompression = BI_RGB;
 }
 
-void resizeWindow(HWND window, Size resolution)
+void forceUpdate(HWND window)
+{
+    InvalidateRect(window, 0, FALSE);
+}
+
+void resizeWindow(HWND window, Vector2 resolution)
 {
     MoveWindow(
             window,
             0, 0,
-            resolution.width, resolution.height,
+            resolution.x, resolution.y,
             false
     );
     resizePaletteAndHdc(resolution);
-    InvalidateRect(window, 0, FALSE);
+    forceUpdate(window);
 }
+
 
 void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
 {
@@ -83,28 +90,33 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
     // key valid to process
     switch(wParam)
     {
-        case VK_ESCAPE: {
+        case VK_ESCAPE:
+        {
             SendMessageA(window, WM_CLOSE, 0, 0);
         } break;
 
         //TODO DEBUG - remove
-        case VK_RETURN: {
+        case VK_RETURN:
+        {
             if(isDown && !wasDown)
-                InvalidateRect(window, 0, FALSE);
+                forceUpdate(window);
         } break;
-        case VK_CONTROL:{
+        case VK_CONTROL:
+        {
             if(isDown)
                 pressedCK |= CTRL;
             else
                 pressedCK &= ~(CTRL);
         }break;
-        case VK_SHIFT:{
+        case VK_SHIFT:
+        {
             if(isDown)
                 pressedCK |= SHIFT;
             else
                 pressedCK &= ~(SHIFT);
         }break;
-        case VK_TAB:{
+        case VK_TAB:
+        {
             if(isDown)
                 pressedCK |= TAB;
             else
@@ -112,7 +124,8 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         }break;
 
         case VK_ADD:
-        case VK_OEM_PLUS:{
+        case VK_OEM_PLUS:
+        {
             if(isDown && !wasDown && isPressedCK(CTRL))
             {
                 if(globalAlpha != 0xFF)
@@ -132,7 +145,8 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             }
         }break;
         case VK_SUBTRACT:
-        case VK_OEM_MINUS: {
+        case VK_OEM_MINUS:
+        {
             if (isDown && !wasDown && isPressedCK(CTRL))
             {
                 if (globalAlpha != 0x0)
@@ -159,28 +173,33 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 {
     LRESULT result = 0;
     switch(message) {
-        case WM_ACTIVATEAPP: {
+        case WM_ACTIVATEAPP:
+        {
             if(wParam) DebugPrint("Activate app");
             else DebugPrint("Deactivate app");
        } break;
 
-        case WM_CLOSE: {
+        case WM_CLOSE:
+        {
             DebugPrint("WM_CLOSE");
             // TODO do some on close saving
 
             DestroyWindow(window);
         } break;
 
-        case WM_DESTROY: {
+        case WM_DESTROY:
+        {
             DebugPrint("WM_DESTROY");
         } break;
 
         case WM_KEYUP:
-        case WM_KEYDOWN: {
+        case WM_KEYDOWN:
+        {
             processKeys(window, wParam, lParam);
         } break;
 
-        case WM_PAINT: {
+        case WM_PAINT:
+        {
             DebugPrint("WM_PAINT");
 
             PAINTSTRUCT paintStruct = {};
@@ -189,7 +208,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             EndPaint(window, &paintStruct);
         } break;
 
-        case WM_DROPFILES: {
+        case WM_DROPFILES:
+        {
 //            TODO add ability to drop multiple files
             DebugPrint("WM_DROPFILES");
             char filename[1024];
@@ -203,13 +223,61 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             DebugPrint(filename);
             defPalette->setImage(filename);
 
-            InvalidateRect(window, 0, FALSE);
+            forceUpdate(window);
         } break;
 
-        case WM_NCHITTEST: {
+        case WM_NCHITTEST:
+        {
             LRESULT hit = DefWindowProc(window, message, wParam, lParam);
             if (isPressedCK(TAB) && hit == HTCLIENT) hit = HTCAPTION;
             return hit;
+        }break;
+
+        case WM_LBUTTONDOWN:
+        {
+            DebugPrint("Mouse click");
+            if(isPressedCK(CTRL))
+            {
+                DebugPrint("Setting IMGMOVE");
+                pressedCK |= IMGMOVE;
+                // start move actions
+                POINT point;
+                if(!GetCursorPos(&point))
+                {
+                    DebugPrint("Could not get mouse position WM_LBUTTONDOWN");
+                }
+                moveStartPoint = {point.x, point.y};
+            }
+        }break;
+        case WM_LBUTTONUP:
+        {
+            DebugPrint("Mouse click up");
+
+            if(isPressedCK(IMGMOVE))
+            {
+                DebugPrint("UnSetting IMGMOVE");
+                pressedCK &= ~(IMGMOVE);
+                // reset move actions
+                moveStartPoint = {0};
+            }
+
+        }break;
+
+        case WM_MOUSEMOVE:
+        {
+            if(isPressedCK(IMGMOVE))
+            {
+//                DebugPrint("IMGMOVE");
+                Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                Vector2 pictureShift = {
+                    newPos.x - moveStartPoint.x,
+                    newPos.y - moveStartPoint.y,
+                };
+                moveStartPoint = newPos;
+
+                defPalette->movePalette(pictureShift);
+                forceUpdate(window);
+            }
         }break;
 
         default: {
@@ -224,7 +292,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                    PSTR CommandLine, INT ShowCode)
 {
     defPalette = std::make_unique<palette::Palette>(
-            resolutions[resIndex].width, resolutions[resIndex].height);
+            resolutions[resIndex].x, resolutions[resIndex].y);
     bitmapInfo = BITMAPINFO{0};
 
     WNDCLASSA windowClass = {};
@@ -244,8 +312,8 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                 WS_VISIBLE|WS_POPUPWINDOW, // WS_POPUP, WS_POPUPWINDOW
                 0,
                 0,
-                resolutions[resIndex].width,
-                resolutions[resIndex].height,
+                resolutions[resIndex].x,
+                resolutions[resIndex].y,
                 0,
                 0,
                 Instance,
