@@ -1,6 +1,7 @@
 #include <memory>
 
 #include "main.h"
+
 #include "palette/palette.h"
 
 // FIXME global
@@ -49,20 +50,48 @@ bool memoryFree(Memory* memory)
 
 void paintToScreen(HDC hdc, void* address, Size size)
 {
-    int stretchResult = StretchDIBits(
+//    int stretchResult = StretchDIBits(
+//            hdc,
+//            0, 0, size.width-200, size.height-100,
+//            0, 0, size.width, size.height,
+//            address,
+//            &bitmapInfo,
+//            DIB_RGB_COLORS,
+//            SRCCOPY
+//    );
+//    if(stretchResult == 0)
+//    {
+//        DebugPrint("paintToScreen: No lines scanned to screen");
+//        return;
+//    }
+
+    HDC memDc = CreateCompatibleDC(hdc);
+
+    void* DibBits = 0;
+    HBITMAP newBitmap = CreateDIBSection(memDc, &bitmapInfo,
+                                         DIB_RGB_COLORS, &DibBits, 0, 0);
+
+    memcpy(DibBits, address, (size.width*size.height*CHANNELS));
+
+    SelectObject(memDc, newBitmap);
+
+//    BLENDFUNCTION blndFn = BLENDFUNCTION{
+//        AC_SRC_OVER,
+//        0,
+//        0xFF,
+//        AC_SRC_ALPHA
+//    };
+
+    TransparentBlt(
             hdc,
             0, 0, size.width, size.height,
+            memDc,
             0, 0, size.width, size.height,
-            address,
-            &bitmapInfo,
-            DIB_RGB_COLORS,
-            SRCCOPY
+            0xFF000000
     );
-    if(stretchResult == 0)
-    {
-        DebugPrint("paintToScreen: No lines scanned to screen");
-        return;
-    }
+
+
+    DeleteDC(memDc);
 }
 
 void resizePaletteAndHdc(Size size)
@@ -263,7 +292,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                 WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_LAYERED|WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
-                WS_VISIBLE|WS_POPUPWINDOW, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
+                WS_VISIBLE|WS_POPUP, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
                 0,
                 0,
                 resolutions[resIndex].width,

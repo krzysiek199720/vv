@@ -25,6 +25,8 @@ inline void DebugPrint(void* address)
 #endif
 }
 
+#define CHANNELS 4 // hwo many bytes per pixel
+
 struct Memory
 {
     uint32 size;
@@ -36,8 +38,8 @@ bool memoryFree(Memory*);
 
 struct Size
 {
-    uint32 width;
-    uint32 height;
+    int32 width;
+    int32 height;
 };
 
 #define CTRL    0b00000001

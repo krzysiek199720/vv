@@ -5,14 +5,12 @@
 #include "../archdef.h"
 #include "image.h"
 
-#define CHANNELS 4
-
 namespace palette
 {
     class Palette
     {
     public:
-        Palette(uint32 width, uint32 height);
+        Palette(int32 width, int32 height);
         ~Palette();
     public:
         Image image;

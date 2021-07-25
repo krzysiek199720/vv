@@ -9,36 +9,36 @@
 void * palette::Palette::getImage()
 {
     DebugPrint("getImage()");
-    if(image.image == 0)
-    {
-        DebugPrint("getImage(): NO image");
-        return 0;
-    }
 
     if(processed)
         return paletteMemory.address;
 
-    int res = stbir_resize_uint8(
-            (const unsigned char*) image.image, image.size.width, image.size.height, 0,
-            (unsigned char  *)paletteMemory.address, size.width, size.height, 0,
-            CHANNELS);
-    if(res == 0)
-    {
-        DebugPrint("Resize error");
-        return 0;
-    }
-    DebugPrint("Resize success");
+    memset(paletteMemory.address, 0x0, (size.width*size.height*CHANNELS) );
 
-    // FIXME library doesnt support BGR, and windows RGB
-    // What to do?  Can i make windows use RGB?
-    uint32* pixel;
-    for(uint32 i = 0; i < (size.width*size.height); ++i)
+    if(image.image != 0)
     {
-        pixel = &((uint32*)paletteMemory.address)[i];
-        *pixel = (uint32)RGB2BGR(*pixel);
-    }
+        int res = stbir_resize_uint8(
+                (const unsigned char*) image.image, image.size.width, image.size.height, 0,
+                (unsigned char  *)paletteMemory.address, size.width, size.height, 0,
+                CHANNELS);
+        if(res == 0)
+        {
+            DebugPrint("Resize error");
+            return 0;
+        }
+        DebugPrint("Resize success");
 
-    processed = true;
+        // FIXME library doesnt support BGR, and windows RGB
+        // What to do?  Can i make windows use RGB?
+        uint32* pixel;
+        for(uint32 i = 0; i < (size.width*size.height); ++i)
+        {
+            pixel = &((uint32*)paletteMemory.address)[i];
+            *pixel = (uint32)RGB2BGR(*pixel);
+        }
+
+        processed = true;
+    }
 
     return paletteMemory.address;
 }
@@ -49,7 +49,7 @@ void palette::Palette::setImage(const char * filename)
     processed = false;
 }
 
-palette::Palette::Palette(uint32 width, uint32 height)
+palette::Palette::Palette(int32 width, int32 height)
     :image(Image{}), size(Size{width, height})
 {
     Memory memory = memoryAlloc(width*height*CHANNELS);
