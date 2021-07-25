@@ -1,24 +1,4 @@
-#include <memory>
-
-#include "main.h"
-
-#include "palette/palette.h"
-
-// FIXME global
-std::unique_ptr<palette::Palette> defPalette;
-BITMAPINFO bitmapInfo;
-
-uint8 pressedCK = 0; // pressed control keys
-#define isPressedCK(key) (pressedCK & (key))
-
-uint8 globalAlpha = 0xFF;
-
-Size resolutions[2] = {
-        {1280, 720},
-        {1920, 1080}
-};
-uint8 resIndex = 0;
-
+#include "win32.h"
 
 Memory memoryAlloc(uint32 size)
 {
@@ -50,21 +30,6 @@ bool memoryFree(Memory* memory)
 
 void paintToScreen(HDC hdc, void* address, Size size)
 {
-//    int stretchResult = StretchDIBits(
-//            hdc,
-//            0, 0, size.width-200, size.height-100,
-//            0, 0, size.width, size.height,
-//            address,
-//            &bitmapInfo,
-//            DIB_RGB_COLORS,
-//            SRCCOPY
-//    );
-//    if(stretchResult == 0)
-//    {
-//        DebugPrint("paintToScreen: No lines scanned to screen");
-//        return;
-//    }
-
     HDC memDc = CreateCompatibleDC(hdc);
 
     void* DibBits = 0;
@@ -75,13 +40,6 @@ void paintToScreen(HDC hdc, void* address, Size size)
 
     SelectObject(memDc, newBitmap);
 
-//    BLENDFUNCTION blndFn = BLENDFUNCTION{
-//        AC_SRC_OVER,
-//        0,
-//        0xFF,
-//        AC_SRC_ALPHA
-//    };
-
     TransparentBlt(
             hdc,
             0, 0, size.width, size.height,
@@ -89,7 +47,6 @@ void paintToScreen(HDC hdc, void* address, Size size)
             0, 0, size.width, size.height,
             0xFF000000
     );
-
 
     DeleteDC(memDc);
 }
@@ -115,6 +72,7 @@ void resizeWindow(HWND window, Size resolution)
             false
     );
     resizePaletteAndHdc(resolution);
+    InvalidateRect(window, 0, FALSE);
 }
 
 void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
@@ -165,12 +123,11 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             }
             if(isDown && !wasDown && isPressedCK(SHIFT))
             {
-//                FIXME change this if resolution stuff chnages
-                if(resIndex == 0)
+                uint8 newIndex = Min(RESOLUTIONCOUNT - 1, resIndex + 1);
+                if(newIndex != resIndex)
                 {
-                    resIndex = 1;
+                    resIndex = newIndex;
                     resizeWindow(window, resolutions[resIndex]);
-                    InvalidateRect(window, 0, FALSE);
                 }
             }
         }break;
@@ -186,12 +143,11 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             }
             if(isDown && !wasDown && isPressedCK(SHIFT))
             {
-//                FIXME change this if resolution stuff chnages
-                if(resIndex == 1)
+                uint8 newIndex = Max(0, resIndex - 1);
+                if(newIndex != resIndex)
                 {
-                    resIndex = 0;
+                    resIndex = newIndex;
                     resizeWindow(window, resolutions[resIndex]);
-                    InvalidateRect(window, 0, FALSE);
                 }
             }
         }break;
@@ -206,9 +162,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_ACTIVATEAPP: {
             if(wParam) DebugPrint("Activate app");
             else DebugPrint("Deactivate app");
-//            if(defPalette->image.image != 0)
-//                paintToScreen(GetDC(0), defPalette->getImage(), defPalette->getSize());
-        } break;
+       } break;
 
         case WM_CLOSE: {
             DebugPrint("WM_CLOSE");
@@ -231,17 +185,12 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
-//            if(defPalette->image.image != 0)
-                paintToScreen(deviceContext, defPalette->getImage(), defPalette->getSize());
+            paintToScreen(deviceContext, defPalette->getImage(), defPalette->getSize());
             EndPaint(window, &paintStruct);
         } break;
 
-        case WM_SIZE: {
-            DebugPrint("WM_SIZE");
-
-        } break;
-
         case WM_DROPFILES: {
+//            TODO add ability to drop multiple files
             DebugPrint("WM_DROPFILES");
             char filename[1024];
             UINT nCount = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, 0, 0);
@@ -289,10 +238,10 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     if(RegisterClassA(&windowClass))
     {
         HWND windowHandle = CreateWindowExA(
-                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_LAYERED|WS_EX_NOACTIVATE -- ??
+                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
-                WS_VISIBLE|WS_POPUP, // TODO -- WS_POPUP, WS_POPUPWINDOW ---- ???
+                WS_VISIBLE|WS_POPUPWINDOW, // WS_POPUP, WS_POPUPWINDOW
                 0,
                 0,
                 resolutions[resIndex].width,
@@ -305,7 +254,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         if(windowHandle)
         {
             DebugPrint("window created");
-            //window created successfully
+            // some internet magic to be able to change alpha levels
             SetWindowLong(windowHandle, GWL_EXSTYLE,
                           GetWindowLong(windowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
             resizePaletteAndHdc(resolutions[resIndex]);
