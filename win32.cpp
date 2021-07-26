@@ -1,4 +1,6 @@
 #include <windowsx.h>
+#include <math.h>
+
 #include "win32.h"
 
 Memory memoryAlloc(uint32 size)
@@ -26,6 +28,12 @@ bool memoryFree(Memory* memory)
 {
     if(memory->address)
         return VirtualFree(memory->address, memory->size, MEM_RELEASE);
+    return true;
+}
+bool softMemoryFree(Memory* memory)
+{
+    if(memory->address)
+        return VirtualFree(memory->address, memory->size, MEM_DECOMMIT);
     return true;
 }
 
@@ -155,7 +163,6 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         {
             if(isDown && !wasDown && isSetting(CTRL))
             {
-                DebugPrint("Alpha up");
                 globalAlpha = Min(0xFF, globalAlpha + 0xF);
                 forceUpdate(window);
             }
@@ -174,7 +181,6 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         {
             if (isDown && !wasDown && isSetting(CTRL))
             {
-                DebugPrint("Alpha down");
                 globalAlpha = Max(0x0, globalAlpha - 0xF);
                 forceUpdate(window);
             }
@@ -195,14 +201,12 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             {
                 if(isSetting(LAYERED))
                 {
-                    DebugPrint("Change treatAsLayerd false");
                     unsetSetting(LAYERED);
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) & (~WS_EX_LAYERED));
                 }
                 else
                 {
-                    DebugPrint("Change treatAsLayerd true");
                     setSetting(LAYERED);
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
@@ -211,6 +215,23 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 forceUpdate(window);
             }
         }
+
+        case VK_MENU:
+        {
+            if (isDown)
+            {
+                if(!wasDown)
+                {
+                    setSetting(ALT);
+                    DebugPrint("Alt down");
+                }
+            }
+            else
+            {
+                unsetSetting(ALT);
+                DebugPrint("Alt up");
+            }
+        }break;
     }
 
 }
@@ -266,7 +287,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_CLOSE:
         {
-            DebugPrint("WM_CLOSE");
             // TODO do some on close saving
 
             DestroyWindow(window);
@@ -274,19 +294,18 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_DESTROY:
         {
-            DebugPrint("WM_DESTROY");
         } break;
 
         case WM_KEYUP:
         case WM_KEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_SYSKEYDOWN:
         {
             processKeys(window, wParam, lParam);
         } break;
 
         case WM_PAINT:
         {
-            DebugPrint("WM_PAINT");
-
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
             paintToScreen(window, deviceContext, defPalette->getImage(), defPalette->getSize());
@@ -296,7 +315,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_DROPFILES:
         {
 //            TODO add ability to drop multiple files
-            DebugPrint("WM_DROPFILES");
             char filename[1024];
             UINT nCount = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, 0, 0);
             if(nCount > 1)
@@ -305,7 +323,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 break;
             }
             DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
-            DebugPrint(filename);
             defPalette->setImage(filename);
 
             forceUpdate(window);
@@ -320,30 +337,64 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_LBUTTONDOWN:
         {
-            DebugPrint("Mouse click");
             Vector2 clickPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
             if(isSetting(CTRL))
             {
-                DebugPrint("Setting IMGMOVE");
                 setSetting(IMGMOVE);
                 moveStartPoint = clickPoint;
                 // start move actions
                 break;
             }
-            DebugPrint("Select image mouse");
+            if(isSetting(ALT))
+            {
+                setSetting(RESIMG);
+                moveStartPoint = clickPoint;
+                break;
+            }
             defPalette->selectImage(&clickPoint);
             forceUpdate(window);
         }break;
         case WM_LBUTTONUP:
         {
-            DebugPrint("Mouse click up");
 
             if(isSetting(IMGMOVE))
             {
-                DebugPrint("UnSetting IMGMOVE");
                 unsetSetting(IMGMOVE);
                 // reset move actions
                 moveStartPoint = {0};
+                break;
+            }
+            if(isSetting(RESIMG))
+            {
+                // do resizing
+                DebugPrint("Resize mouse up");
+                Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                Vector2 move = {
+                        newPos.x - moveStartPoint.x,
+                        newPos.y - moveStartPoint.y,
+                };
+                moveStartPoint = newPos;
+                // FIXME i hate to use sqrt here,
+                //  maybe some other method to get a nice move pattern for scaling
+                double moveSize = sqrt(move.x * move.x + move.y * move.y);
+                int32 moveSizeInt = lround(moveSize);
+                if(moveSizeInt <= 0)
+                    break;
+
+                float scaledMove = isSetting(SHIFT) ? moveSizeInt * LARGESTEP : moveSizeInt * SMALLSTEP;
+                if(move.x < 0 && move.y < 0)
+                    scaledMove = -scaledMove;
+
+                DebugPrint("scaledMove");
+                DebugPrint(scaledMove);
+                bool success = defPalette->changeSelectedRatio(scaledMove);
+//                bool success = defPalette->changeSelectedRatio(-0.5f);
+
+                if(success)
+                    forceUpdate(window);
+
+                unsetSetting(RESIMG);
+                break;
             }
 
         }break;
@@ -361,6 +412,34 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
                 defPalette->movePalette(pictureShift);
                 forceUpdate(window);
+                break;
+            }
+            if(isSetting(RESIMG))
+            {
+                // TODO make it show rectangle border of new size as real resize is very
+                // resouce heavy
+//                DebugPrint("Resize");
+//                Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+//                Vector2 move = {
+//                        newPos.x - moveStartPoint.x,
+//                        newPos.y - moveStartPoint.y,
+//                };
+//                moveStartPoint = newPos;
+//                // FIXME i hate to use sqrt here,
+//                //  maybe some other method to get a nice move pattern for scaling
+//                double moveSize = sqrt(move.x * move.x + move.y * move.y);
+//                int32 moveSizeInt = lround(moveSize);
+//                DebugPrint(moveSizeInt);
+//
+//                if(moveSizeInt <= 0)
+//                    break;
+//
+//                float scaledMove = isSetting(SHIFT) ? moveSizeInt * LARGESTEP : moveSizeInt * SMALLSTEP;
+//
+//                //
+//
+//                forceUpdate(window);
+
             }
         }break;
 

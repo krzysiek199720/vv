@@ -8,24 +8,22 @@
 
 void * palette::Palette::getImage()
 {
-    DebugPrint("getImage()");
-
     if(processed)
         return paletteMemory.address;
 
-//    zeroing imageRaw so uncovered areas are redrawn and transparent
+//    zeroing image so uncovered areas are redrawn and transparent
     memset(paletteMemory.address, 0x0, (size.x * size.y * CHANNELS) );
 
-    if(image.getImageRaw() == 0 )
+    if(image.getImage() == 0 )
     {
         processed = true;
         return paletteMemory.address;
     }
 
-//    actual imageRaw making
+//    actual image making
     {
         Vector2 imageSize = {0};
-        void* imageAddress = image.getImageRaw(&imageSize);
+        void* imageAddress = image.getImage(&imageSize);
 
         Vector2 finalOffset = {offset.x + image.offset.x, offset.y + image.offset.y};
 
@@ -72,7 +70,6 @@ void * palette::Palette::getImage()
             // if this is selected image do a rectangle border
             if(&image == selectedImage)
             {
-                DebugPrint("Border draw");
 //                bool borderTop = (palette_write.y >= 0);
 //                bool borderBottom = (image_read_end.y >= imageSize.y);
 //                bool borderLeft = (palette_write.x >= 0);
@@ -87,7 +84,6 @@ void * palette::Palette::getImage()
                 uint32* pixel;
                 if(borderTop)
                 {
-                    DebugPrint("Border draw top");
                     pixel = pixelPaletteStart;
                     for(uint32 i = 0; i < pixels_count_x; ++i)
                     {
@@ -96,7 +92,6 @@ void * palette::Palette::getImage()
                 }
                 if(borderBottom)
                 {
-                    DebugPrint("Border draw bottom");
                     pixel = pixelPaletteStart + (pixels_count_y * size.x);
                     for(uint32 i = 0; i < pixels_count_x; ++i)
                     {
@@ -105,7 +100,6 @@ void * palette::Palette::getImage()
                 }
                 if(borderLeft)
                 {
-                   DebugPrint("Border draw left");
                     pixel = pixelPaletteStart;
                     for(uint32 i = 0; i < pixels_count_y; ++i)
                     {
@@ -115,7 +109,6 @@ void * palette::Palette::getImage()
                 }
                 if(borderRight)
                 {
-                  DebugPrint("Border draw right");
                     pixel = pixelPaletteStart + pixels_count_x;
                     for(uint32 i = 0; i < pixels_count_y; ++i)
                     {
@@ -123,14 +116,12 @@ void * palette::Palette::getImage()
                         pixel += size.x;
                     }
                 }
-
-                DebugPrint("Border draw end");
             }
         }
         else
             DebugPrint("No image-screen overlap, skipping draw");
     }
-//    end:- actual imageRaw making
+//    end:- actual image making
     // FIXME library doesnt support BGR, and windows RGB
     // What to do?  Can i make windows use RGB?
     uint32* pixel = (uint32*)paletteMemory.address;
@@ -205,11 +196,8 @@ void palette::Palette::movePalette(Vector2 change) {
 
 void palette::Palette::selectImage(Vector2* position)
 {
-    DebugPrint("Select image mouse");
-
     if(!position)
     {
-        DebugPrint("Deselectiong image");
         selectedImage = 0;
         return;
     }
@@ -218,15 +206,20 @@ void palette::Palette::selectImage(Vector2* position)
     processed = false;
 }
 
-//image resize example
-//
-//int res = stbir_resize_uint8(
-//        (const unsigned char*) image.imageRaw, image.sizeRaw.x, image.sizeRaw.y, 0,
-//        (unsigned char  *)paletteMemory.address, size.x, size.y, 0,
-//        CHANNELS);
-//if(res == 0)
-//{
-//DebugPrint("Resize error");
-//return 0;
-//}
-//DebugPrint("Resize success");
+bool palette::Palette::setSelectedRatio(float newRatio) {
+    bool success = selectedImage->setImageRatio(newRatio);
+    if(!success)
+        return false;
+    processed = false;
+    return true;
+}
+
+bool palette::Palette::changeSelectedRatio(float ratioChange) {
+    bool success = selectedImage->changeImageRatio(ratioChange);
+    if(!success)
+        return false;
+    processed = false;
+    return true;
+
+}
+

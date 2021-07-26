@@ -18,6 +18,18 @@ inline void DebugPrint(uint32 number)
     printf("%d\n", number);
 #endif
 }
+inline void DebugPrint(int32 number)
+{
+#if DEBUG
+    printf("%d\n", number);
+#endif
+}
+inline void DebugPrint(float number)
+{
+#if DEBUG
+    printf("%f\n", number);
+#endif
+}
 inline void DebugPrint(void* address)
 {
 #if DEBUG
@@ -46,11 +58,13 @@ struct Memory
 
 Memory memoryAlloc(uint32 size);
 bool memoryFree(Memory*);
+bool softMemoryFree(Memory*);
 
 struct Vector2
 {
     int32 x;
     int32 y;
 };
+
 
 #endif //VV_MAIN_H

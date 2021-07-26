@@ -27,18 +27,24 @@ uint32 setting = 0; // pressed control keys
 void setSetting(uint32 key){setting |= (key);}
 void unsetSetting(uint32 key){setting &= ~(key);}
 
-#define CTRL    0b00000001
-#define SHIFT   0b00000010
-#define TAB     0b00000100
-#define IMGMOVE 0b00001000
-#define LAYERED 0b00010000
-#define FOCUS   0b00100000
-#define HALPHA  0b01000000 // has alpha
+#define CTRL    0b000000001
+#define SHIFT   0b000000010
+#define ALT    0b000000100
+#define TAB     0b000001000
+#define IMGMOVE 0b000010000
+#define LAYERED 0b000100000
+#define FOCUS   0b001000000
+#define HALPHA  0b010000000 // has alpha
+#define RESIMG  0b100000000 // image resize
 
-Vector2 moveStartPoint = {0};
+Vector2 moveStartPoint = {0}; // used for both palette move and img resize
 
 // hotkeys
 #define GETFOCUSHK 1
 #define ALPHATOGGLE 2
+
+// resize numbers - in percentage per pixel moved with mouse
+#define SMALLSTEP 0.0005
+#define LARGESTEP 0.0010
 
 #endif //VV_WIN32_H
