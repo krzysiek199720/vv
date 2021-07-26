@@ -80,6 +80,7 @@ void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
         );
     }
 
+    DeleteObject(newBitmap);
     DeleteDC(memDc);
 }
 
