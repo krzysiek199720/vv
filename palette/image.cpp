@@ -9,6 +9,7 @@ palette::Image::Image()
 
 palette::Image::~Image() {
     stbi_image_free(this->imageRaw);
+    memoryFree(&image);
 }
 
 void palette::Image::setImage(const char * filename) {
@@ -29,8 +30,7 @@ void palette::Image::setImage(const char * filename) {
 
     resizeRatio = 1.0;
     size = {0};
-    if(image.address)
-        memoryFree(&image);
+    memoryFree(&image);
     image = {0};
     offset = {0};
 }
@@ -76,6 +76,11 @@ bool palette::Image::setImageRatio(float newRatio)
 {
     if(!imageRaw)
         return false;
+    if(newRatio == 1.0)
+    {
+        resetImageRatio();
+        return true;
+    }
 
     Vector2 newSize = {(int32)(sizeRaw.x * newRatio), (int32)(sizeRaw.y * newRatio)};
 
@@ -84,7 +89,7 @@ bool palette::Image::setImageRatio(float newRatio)
 //    bool useOldMemory = image.size <= (newSize.x * newSize.y * CHANNELS);
 //    if(!useOldMemory)
 //    {
-        softMemoryFree(&image);
+        memoryFree(&image);
 
         image = memoryAlloc(newSize.x * newSize.y * CHANNELS);
         if(!image.address)
@@ -113,4 +118,16 @@ bool palette::Image::changeImageRatio(float ratioChange) {
     if(newRatio <= 0.0)
         return false;
     return setImageRatio(newRatio);
+}
+
+bool palette::Image::resetImageRatio() {
+    DebugPrint("Reset ratio image");
+
+    if(!memoryFree(&image))
+        return false;
+
+    resizeRatio = 1.0;
+    size = {0};
+    DebugPrint("Reset ratio image end");
+    return true;
 }

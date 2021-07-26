@@ -34,6 +34,7 @@ namespace palette
 
         bool setSelectedRatio(float);
         bool changeSelectedRatio(float);
+        bool resetSelectedRatio();
     };
 }
 

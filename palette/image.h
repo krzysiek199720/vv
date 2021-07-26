@@ -20,7 +20,7 @@ namespace palette
 
         float resizeRatio = 1.0;
         Vector2 size = {0};
-        Memory image;
+        Memory image = {0};
     public:
         void setImage(const char *);
         void setImageOffset(Vector2);
@@ -35,6 +35,7 @@ namespace palette
 
         bool setImageRatio(float);
         bool changeImageRatio(float);
+        bool resetImageRatio();
     };
 }
 

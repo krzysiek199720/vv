@@ -171,7 +171,7 @@ void palette::Palette::setSize(Vector2 newSize) {
         DebugPrint("SetPaletteSize wrong newSize");
     }
     this->size = newSize;
-    memoryFree(&this->paletteMemory);
+    memoryFree(&paletteMemory);
     Memory newMemory = memoryAlloc(newSize.x * newSize.y * CHANNELS);
     if(newMemory.address == 0)
     {
@@ -207,19 +207,37 @@ void palette::Palette::selectImage(Vector2* position)
 }
 
 bool palette::Palette::setSelectedRatio(float newRatio) {
-    bool success = selectedImage->setImageRatio(newRatio);
-    if(!success)
-        return false;
-    processed = false;
-    return true;
+    if(selectedImage)
+    {
+        bool success = selectedImage->setImageRatio(newRatio);
+        if(!success)
+            return false;
+        processed = false;
+        return true;
+    }
+    return false;
 }
 
 bool palette::Palette::changeSelectedRatio(float ratioChange) {
-    bool success = selectedImage->changeImageRatio(ratioChange);
-    if(!success)
+    if(selectedImage)
+    {
+        bool success = selectedImage->changeImageRatio(ratioChange);
+        if(!success)
+            return false;
+        processed = false;
+        return true;
+    }
+    return false;
+}
+
+bool palette::Palette::resetSelectedRatio() {
+    if(!selectedImage)
         return false;
+
+    DebugPrint("Reset ratio palette");
+
+    selectedImage->resetImageRatio();
     processed = false;
     return true;
-
 }
 

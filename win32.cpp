@@ -8,14 +8,17 @@ Memory memoryAlloc(uint32 size)
     Memory memory = {0};
 
     void* resAdd = VirtualAlloc(
-            0,
+            NULL,
             size,
-            MEM_COMMIT,
+            MEM_COMMIT|MEM_RESERVE,
             PAGE_READWRITE
     );
 
     if(resAdd)
     {
+        DebugPrint("Virt alloc");
+        DebugPrint(resAdd);
+        DebugPrint(size);
         memory.address = resAdd;
         memory.size = size;
     }
@@ -26,15 +29,20 @@ Memory memoryAlloc(uint32 size)
 }
 bool memoryFree(Memory* memory)
 {
-    if(memory->address)
-        return VirtualFree(memory->address, memory->size, MEM_RELEASE);
-    return true;
-}
-bool softMemoryFree(Memory* memory)
-{
-    if(memory->address)
-        return VirtualFree(memory->address, memory->size, MEM_DECOMMIT);
-    return true;
+    bool result;
+    result = VirtualFree(memory->address, 0, MEM_RELEASE);
+
+    if(result)
+    {
+        DebugPrint("Released memory");
+        DebugPrint(memory->address);
+        DebugPrint(memory->size);
+        DebugPrint("");
+        *memory = {0};
+        return true;
+    }
+    DebugPrint("Failed to release memory");
+    return false;
 }
 
 void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
@@ -215,7 +223,17 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 unsetSetting(HALPHA);
                 forceUpdate(window);
             }
-        }
+        }break;
+
+        case VK_BACK:
+        {
+            if(isDown && !wasDown)
+            {
+                if(defPalette->resetSelectedRatio())
+                    forceUpdate(window);
+            }
+
+        }break;
 
         case VK_MENU:
         {
@@ -385,11 +403,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 float scaledMove = isSetting(SHIFT) ? moveSizeInt * LARGESTEP : moveSizeInt * SMALLSTEP;
                 if(move.x < 0 && move.y < 0)
                     scaledMove = -scaledMove;
-
-                DebugPrint("scaledMove");
-                DebugPrint(scaledMove);
                 bool success = defPalette->changeSelectedRatio(scaledMove);
-//                bool success = defPalette->changeSelectedRatio(-0.5f);
 
                 if(success)
                     forceUpdate(window);

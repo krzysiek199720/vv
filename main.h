@@ -6,37 +6,6 @@
 
 #include "archdef.h"
 
-inline void DebugPrint(const char* str)
-{
-#if DEBUG
-    std::cout << str << '\n';
-#endif
-}
-inline void DebugPrint(uint32 number)
-{
-#if DEBUG
-    printf("%d\n", number);
-#endif
-}
-inline void DebugPrint(int32 number)
-{
-#if DEBUG
-    printf("%d\n", number);
-#endif
-}
-inline void DebugPrint(float number)
-{
-#if DEBUG
-    printf("%f\n", number);
-#endif
-}
-inline void DebugPrint(void* address)
-{
-#if DEBUG
-    printf("%p\n", address);
-#endif
-}
-
 template<typename T>
 T Min(T a, T b)
 {
@@ -58,7 +27,6 @@ struct Memory
 
 Memory memoryAlloc(uint32 size);
 bool memoryFree(Memory*);
-bool softMemoryFree(Memory*);
 
 struct Vector2
 {
@@ -66,5 +34,41 @@ struct Vector2
     int32 y;
 };
 
+inline void DebugPrint(const char* str...)
+{
+#if DEBUG
+    std::cout << str << '\n';
+#endif
+}
+inline void DebugPrint(uint32 number...)
+{
+#if DEBUG
+    printf("%d\n", number);
+#endif
+}
+inline void DebugPrint(int32 number...)
+{
+#if DEBUG
+    printf("%d\n", number);
+#endif
+}
+inline void DebugPrint(float number...)
+{
+#if DEBUG
+    printf("%f\n", number);
+#endif
+}
+inline void DebugPrint(void* address...)
+{
+#if DEBUG
+    printf("%p\n", address);
+#endif
+}
+inline void DebugPrint(Vector2 vec...)
+{
+#if DEBUG
+    printf("%d %d\n", vec.x, vec.y);
+#endif
+}
 
 #endif //VV_MAIN_H
