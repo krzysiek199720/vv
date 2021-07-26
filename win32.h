@@ -10,9 +10,6 @@
 std::unique_ptr<palette::Palette> defPalette;
 BITMAPINFO bitmapInfo;
 
-uint8 pressedCK = 0; // pressed control keys
-#define isPressedCK(key) (pressedCK & (key))
-
 uint8 globalAlpha = 0xFF;
 
 #define RESOLUTIONCOUNT 4
@@ -24,17 +21,23 @@ Vector2 resolutions[RESOLUTIONCOUNT] = {
 };
 uint8 resIndex = 0;
 
+
+uint32 setting = 0; // pressed control keys
+#define isSetting(key) (setting & (key))
+void setSetting(uint32 key){setting |= (key);}
+void unsetSetting(uint32 key){setting &= ~(key);}
+
 #define CTRL    0b00000001
 #define SHIFT   0b00000010
 #define TAB     0b00000100
-
 #define IMGMOVE 0b00001000
+#define LAYERED 0b00010000
+#define FOCUS   0b00100000
+#define HALPHA  0b01000000 // has alpha
+
 Vector2 moveStartPoint = {0};
 
-bool treatAsLayered = false;
-bool hasFocus = true;
-bool noAlpha = false;
-
+// hotkeys
 #define GETFOCUSHK 1
 #define ALPHATOGGLE 2
 

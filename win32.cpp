@@ -41,12 +41,12 @@ void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
 
     SelectObject(memDc, newBitmap);
 
-    if(treatAsLayered)
+    if(isSetting(LAYERED))
     {
         BLENDFUNCTION blend =  {
         AC_SRC_OVER,
         0,
-        noAlpha ? (uint8)0 : globalAlpha,
+        isSetting(HALPHA) ? (uint8)0 : globalAlpha,
         AC_SRC_ALPHA
         };
         UpdateLayeredWindow(
@@ -108,7 +108,7 @@ void resizeWindow(HWND window, Vector2 resolution)
 
 void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
 {
-    if(!hasFocus)
+    if(!isSetting(FOCUS))
         return;
 
     bool isDown = (lParam & (1 << 31)) == 0;
@@ -131,35 +131,35 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         case VK_CONTROL:
         {
             if(isDown)
-                pressedCK |= CTRL;
+                setSetting(CTRL);
             else
-                pressedCK &= ~(CTRL);
+                unsetSetting(CTRL);
         }break;
         case VK_SHIFT:
         {
             if(isDown)
-                pressedCK |= SHIFT;
+                setSetting(SHIFT);
             else
-                pressedCK &= ~(SHIFT);
+                unsetSetting(SHIFT);
         }break;
         case VK_TAB:
         {
             if(isDown)
-                pressedCK |= TAB;
+                setSetting(TAB);
             else
-                pressedCK &= ~(TAB);
+                unsetSetting(TAB);
         }break;
 
         case VK_ADD:
         case VK_OEM_PLUS:
         {
-            if(isDown && !wasDown && isPressedCK(CTRL))
+            if(isDown && !wasDown && isSetting(CTRL))
             {
                 DebugPrint("Alpha up");
                 globalAlpha = Min(0xFF, globalAlpha + 0xF);
                 forceUpdate(window);
             }
-            if(isDown && !wasDown && isPressedCK(SHIFT))
+            if(isDown && !wasDown && isSetting(SHIFT))
             {
                 uint8 newIndex = Min(RESOLUTIONCOUNT - 1, resIndex + 1);
                 if(newIndex != resIndex)
@@ -172,13 +172,13 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         case VK_SUBTRACT:
         case VK_OEM_MINUS:
         {
-            if (isDown && !wasDown && isPressedCK(CTRL))
+            if (isDown && !wasDown && isSetting(CTRL))
             {
                 DebugPrint("Alpha down");
                 globalAlpha = Max(0x0, globalAlpha - 0xF);
                 forceUpdate(window);
             }
-            if(isDown && !wasDown && isPressedCK(SHIFT))
+            if(isDown && !wasDown && isSetting(SHIFT))
             {
                 uint8 newIndex = Max(0, resIndex - 1);
                 if(newIndex != resIndex)
@@ -193,21 +193,21 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         {
             if (isDown && !wasDown)
             {
-                if(treatAsLayered)
+                if(isSetting(LAYERED))
                 {
                     DebugPrint("Change treatAsLayerd false");
-                    treatAsLayered = false;
+                    unsetSetting(LAYERED);
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) & (~WS_EX_LAYERED));
                 }
                 else
                 {
                     DebugPrint("Change treatAsLayerd true");
-                    treatAsLayered = true;
+                    setSetting(LAYERED);
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
                 }
-                noAlpha = false;
+                unsetSetting(HALPHA);
                 forceUpdate(window);
             }
         }
@@ -227,13 +227,13 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_SETFOCUS:
         {
-            hasFocus = true;
+            setSetting(FOCUS);
             DebugPrint("Has focus");
         }break;
         case WM_KILLFOCUS:
         {
             DebugPrint("Lost focus");
-            hasFocus = false;
+            unsetSetting(FOCUS);
         }break;
 
         case WM_HOTKEY:
@@ -254,9 +254,9 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 case ALPHATOGGLE:
                 {
                     DebugPrint("ALPHATOGGLE Hotkey pressed");
-                    if(treatAsLayered)
+                    if(isSetting(LAYERED))
                     {
-                        noAlpha = !noAlpha;
+                        isSetting(HALPHA) ? unsetSetting(HALPHA) : setSetting(HALPHA);
                         forceUpdate(window);
                     }
                 }break;
@@ -314,17 +314,17 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_NCHITTEST:
         {
             LRESULT hit = DefWindowProc(window, message, wParam, lParam);
-            if (isPressedCK(TAB) && hit == HTCLIENT) hit = HTCAPTION;
+            if (isSetting(TAB) && hit == HTCLIENT) hit = HTCAPTION;
             return hit;
         }break;
 
         case WM_LBUTTONDOWN:
         {
             DebugPrint("Mouse click");
-            if(isPressedCK(CTRL))
+            if(isSetting(CTRL))
             {
                 DebugPrint("Setting IMGMOVE");
-                pressedCK |= IMGMOVE;
+                setSetting(IMGMOVE);
                 // start move actions
                 moveStartPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
             }
@@ -333,10 +333,10 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         {
             DebugPrint("Mouse click up");
 
-            if(isPressedCK(IMGMOVE))
+            if(isSetting(IMGMOVE))
             {
                 DebugPrint("UnSetting IMGMOVE");
-                pressedCK &= ~(IMGMOVE);
+                unsetSetting(IMGMOVE);
                 // reset move actions
                 moveStartPoint = {0};
             }
@@ -345,9 +345,8 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_MOUSEMOVE:
         {
-            if(isPressedCK(IMGMOVE))
+            if(isSetting(IMGMOVE))
             {
-//                DebugPrint("IMGMOVE");
                 Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                 Vector2 pictureShift = {
                     newPos.x - moveStartPoint.x,
