@@ -326,12 +326,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 DebugPrint("Setting IMGMOVE");
                 pressedCK |= IMGMOVE;
                 // start move actions
-                POINT point;
-                if(!GetCursorPos(&point))
-                {
-                    DebugPrint("Could not get mouse position WM_LBUTTONDOWN");
-                }
-                moveStartPoint = {point.x, point.y};
+                moveStartPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
             }
         }break;
         case WM_LBUTTONUP:
