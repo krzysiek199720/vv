@@ -9,12 +9,14 @@
 void * palette::Palette::getImage()
 {
     if(processed)
+    {
         return paletteMemory.address;
+    }
 
 //    zeroing image so uncovered areas are redrawn and transparent
     memset(paletteMemory.address, 0x0, (size.x * size.y * CHANNELS) );
 
-    if(image.getImage() == 0 )
+    if(image.getImage() == 0)
     {
         processed = true;
         return paletteMemory.address;
@@ -54,7 +56,7 @@ void * palette::Palette::getImage()
 
             uint32* pixelPalette = ((uint32*) paletteMemory.address) +
                     ((palette_write.y * size.x) + palette_write.x);
-            uint32* pixelPaletteStart = pixelPalette; // for later use
+            uint32* pixelPaletteStart = pixelPalette; // for select border
             uint32* pixelImage = ((uint32*) imageAddress) +
                                  ((image_read_start.y * imageSize.x) + image_read_start.x);
 
@@ -67,53 +69,50 @@ void * palette::Palette::getImage()
                 pixelPalette += (size.x - pixels_count_x);
                 pixelImage += (imageSize.x - pixels_count_x);
             }
+
+
             // if this is selected image do a rectangle border
             if(&image == selectedImage)
             {
-//                bool borderTop = (palette_write.y >= 0);
-//                bool borderBottom = (image_read_end.y >= imageSize.y);
-//                bool borderLeft = (palette_write.x >= 0);
-//                bool borderRight = (image_read_end.x >= imageSize.x);
-
                 bool borderTop = (finalOffset.y >= 0);
                 bool borderBottom = (image_read_end.y >= imageSize.y);
                 bool borderLeft = (finalOffset.x >= 0);
                 bool borderRight = (image_read_end.x >= imageSize.x);
 
                 uint32 color = 0xFF0000FF;
-                uint32* pixel;
+                uint32* borderPixel;
                 if(borderTop)
                 {
-                    pixel = pixelPaletteStart;
+                    borderPixel = pixelPaletteStart;
                     for(uint32 i = 0; i < pixels_count_x; ++i)
                     {
-                        *pixel++ = color;
+                        *borderPixel++ = color;
                     }
                 }
                 if(borderBottom)
                 {
-                    pixel = pixelPaletteStart + (pixels_count_y * size.x);
+                    borderPixel = pixelPaletteStart + (pixels_count_y * size.x);
                     for(uint32 i = 0; i < pixels_count_x; ++i)
                     {
-                        *pixel++ = color;
+                        *borderPixel++ = color;
                     }
                 }
                 if(borderLeft)
                 {
-                    pixel = pixelPaletteStart;
-                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    borderPixel = pixelPaletteStart;
+                    for(uint32 i = 0; i <= pixels_count_y; ++i)
                     {
-                        *pixel = color;
-                        pixel += size.x;
+                        *borderPixel = color;
+                        borderPixel += size.x;
                     }
                 }
                 if(borderRight)
                 {
-                    pixel = pixelPaletteStart + pixels_count_x;
-                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    borderPixel = pixelPaletteStart + pixels_count_x;
+                    for(uint32 i = 0; i <= pixels_count_y; ++i)
                     {
-                        *pixel = color;
-                        pixel += size.x;
+                        *borderPixel = color;
+                        borderPixel += size.x;
                     }
                 }
             }
@@ -198,11 +197,19 @@ void palette::Palette::selectImage(Vector2* position)
 {
     if(!position)
     {
+        if(selectedImage)
+        {
+            processed = false;
+        }
         selectedImage = 0;
         return;
     }
+
     // FIXME mostly for future, as right now there is only one image
-    selectedImage = &image;
+    Image* newImage = &image;
+    if(newImage == selectedImage)
+        return;
+    selectedImage = newImage;
     processed = false;
 }
 

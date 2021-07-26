@@ -9,7 +9,8 @@ palette::Image::Image()
 
 palette::Image::~Image() {
     stbi_image_free(this->imageRaw);
-    memoryFree(&image);
+    if(image.address)
+        memoryFree(&image);
 }
 
 void palette::Image::setImage(const char * filename) {
@@ -30,7 +31,8 @@ void palette::Image::setImage(const char * filename) {
 
     resizeRatio = 1.0;
     size = {0};
-    memoryFree(&image);
+    if(image.address)
+        memoryFree(&image);
     image = {0};
     offset = {0};
 }
@@ -86,17 +88,13 @@ bool palette::Image::setImageRatio(float newRatio)
 
     printf("%d %d\n", newSize.x, newSize.y);
 
-//    bool useOldMemory = image.size <= (newSize.x * newSize.y * CHANNELS);
-//    if(!useOldMemory)
-//    {
+    if(image.address)
         memoryFree(&image);
 
-        image = memoryAlloc(newSize.x * newSize.y * CHANNELS);
-        if(!image.address)
-            throw std::bad_alloc();
-//    }
+    image = memoryAlloc(newSize.x * newSize.y * CHANNELS);
+    if(!image.address)
+        throw std::bad_alloc();
 
-    DebugPrint("Starting resize");
     int res = stbir_resize_uint8(
             (const unsigned char*) imageRaw, sizeRaw.x, sizeRaw.y, 0,
             (unsigned char  *)image.address, newSize.x, newSize.y, 0,
@@ -106,14 +104,12 @@ bool palette::Image::setImageRatio(float newRatio)
         DebugPrint("Resize error");
         return false;
     }
-    DebugPrint("Resize success");
     resizeRatio = newRatio;
     size = newSize;
     return true;
 }
 
 bool palette::Image::changeImageRatio(float ratioChange) {
-    DebugPrint("Image change ratio");
     float newRatio = resizeRatio + ratioChange;
     if(newRatio <= 0.0)
         return false;
@@ -121,13 +117,10 @@ bool palette::Image::changeImageRatio(float ratioChange) {
 }
 
 bool palette::Image::resetImageRatio() {
-    DebugPrint("Reset ratio image");
-
     if(!memoryFree(&image))
         return false;
 
     resizeRatio = 1.0;
     size = {0};
-    DebugPrint("Reset ratio image end");
     return true;
 }

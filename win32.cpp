@@ -16,9 +16,6 @@ Memory memoryAlloc(uint32 size)
 
     if(resAdd)
     {
-        DebugPrint("Virt alloc");
-        DebugPrint(resAdd);
-        DebugPrint(size);
         memory.address = resAdd;
         memory.size = size;
     }
@@ -34,15 +31,11 @@ bool memoryFree(Memory* memory)
 
     if(result)
     {
-        DebugPrint("Released memory");
-        DebugPrint(memory->address);
-        DebugPrint(memory->size);
-        DebugPrint("");
         *memory = {0};
         return true;
     }
     DebugPrint("Failed to release memory");
-    return false;
+    throw std::bad_alloc();
 }
 
 void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
@@ -219,6 +212,7 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                     setSetting(LAYERED);
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
+                    defPalette->selectImage(0); // deselect image
                 }
                 unsetSetting(HALPHA);
                 forceUpdate(window);
@@ -242,13 +236,11 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 if(!wasDown)
                 {
                     setSetting(ALT);
-                    DebugPrint("Alt down");
                 }
             }
             else
             {
                 unsetSetting(ALT);
-                DebugPrint("Alt up");
             }
         }break;
     }
@@ -361,7 +353,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             {
                 setSetting(IMGMOVE);
                 moveStartPoint = clickPoint;
-                // start move actions
+
                 break;
             }
             if(isSetting(ALT))
@@ -386,7 +378,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             if(isSetting(RESIMG))
             {
                 // do resizing
-                DebugPrint("Resize mouse up");
                 Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
                 Vector2 move = {
                         newPos.x - moveStartPoint.x,
@@ -433,7 +424,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             {
                 // TODO make it show rectangle border of new size as real resize is very
                 // resouce heavy
-//                DebugPrint("Resize");
 //                Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
 //                Vector2 move = {
 //                        newPos.x - moveStartPoint.x,
@@ -444,7 +434,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 //                //  maybe some other method to get a nice move pattern for scaling
 //                double moveSize = sqrt(move.x * move.x + move.y * move.y);
 //                int32 moveSizeInt = lround(moveSize);
-//                DebugPrint(moveSizeInt);
 //
 //                if(moveSizeInt <= 0)
 //                    break;
