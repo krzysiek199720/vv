@@ -8,4 +8,4 @@ add_executable(vv win32.cpp archdef.h libraries/stb_libraries_init.cpp palette/p
 target_link_libraries(vv Msimg32.lib)
 
 # for debug functions -- like debug print to standard output
-add_compile_definitions(DEBUG=0)
+add_compile_definitions(DEBUG=1)

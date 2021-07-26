@@ -37,33 +37,26 @@ void * palette::Palette::getImage()
 
             palette_write.x = (finalOffset.x < 0) ? 0 : finalOffset.x;
             palette_write.y = (finalOffset.y < 0) ? 0 : finalOffset.y;
-            printf("%d, %d\t", palette_write.x, palette_write.y);
 
             image_read_start.x = (finalOffset.x < 0) ?  -(finalOffset.x) : 0;
             image_read_start.y = (finalOffset.y < 0) ?  -(finalOffset.y) : 0;
-            printf("%d, %d\t", image_read_start.x, image_read_start.y);
 
 
-//            FIXME doesnt work if image is trying to offset above palette - i think the bug is here
             image_read_end.x = ((finalOffset.x + imageSize.x) >= size.x) ?
                     imageSize.x - ((finalOffset.x + imageSize.x) - size.x) :
                     imageSize.x;
             image_read_end.y = ((finalOffset.y + imageSize.y) >= size.y) ?
                     imageSize.y - ((finalOffset.y + imageSize.y) - size.y) :
                     imageSize.y;
-            printf("%d, %d\n", image_read_end.x, image_read_end.y);
 
             int32 pixels_count_x = image_read_end.x - image_read_start.x;
             int32 pixels_count_y = image_read_end.y - image_read_start.y;
-            printf("%d %d\n", pixels_count_x, pixels_count_y);
 
             uint32* pixelPalette = ((uint32*) paletteMemory.address) +
                     ((palette_write.y * size.x) + palette_write.x);
-            printf("%p %p\n", paletteMemory.address, pixelPalette);
 
             uint32* pixelImage = ((uint32*) imageAddress) +
-                                 ((image_read_start.y * size.x) + image_read_start.x);
-            printf("%p %p\n", imageAddress, pixelImage);
+                                 ((image_read_start.y * imageSize.x) + image_read_start.x);
 
             for(int32 i = 0; i < pixels_count_y; ++i)
             {
