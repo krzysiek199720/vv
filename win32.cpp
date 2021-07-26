@@ -29,7 +29,7 @@ bool memoryFree(Memory* memory)
     return true;
 }
 
-void paintToScreen(HDC hdc, void* address, Vector2 size)
+void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
 {
     HDC memDc = CreateCompatibleDC(hdc);
 
@@ -41,13 +41,36 @@ void paintToScreen(HDC hdc, void* address, Vector2 size)
 
     SelectObject(memDc, newBitmap);
 
-    TransparentBlt(
-            hdc,
-            0, 0, size.x, size.y,
-            memDc,
-            0, 0, size.x, size.y,
-            0xFF000000
-    );
+    if(treatAsLayered)
+    {
+        BLENDFUNCTION blend =  {
+        AC_SRC_OVER,
+        0,
+        globalAlpha,
+        AC_SRC_ALPHA
+        };
+        UpdateLayeredWindow(
+                window,
+                hdc,
+                0,
+                0,
+                memDc,
+                0,
+                RGB(0, 0, 0),
+                &blend,
+                ULW_ALPHA
+        );
+    }
+    else
+    {
+        BitBlt(
+                hdc,
+                0, 0, size.x, size.y,
+                memDc,
+                0, 0,
+                SRCCOPY
+        );
+    }
 
     DeleteDC(memDc);
 }
@@ -62,6 +85,7 @@ void resizePaletteAndHdc(Vector2 size)
     bitmapInfo.bmiHeader.biPlanes = 1;
     bitmapInfo.bmiHeader.biBitCount = 32;
     bitmapInfo.bmiHeader.biCompression = BI_RGB;
+    bitmapInfo.bmiHeader.biSizeImage  = size.x*size.y*CHANNELS;
 }
 
 void forceUpdate(HWND window)
@@ -128,11 +152,9 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         {
             if(isDown && !wasDown && isPressedCK(CTRL))
             {
-                if(globalAlpha != 0xFF)
-                {
-                    globalAlpha += 0xF;
-                    SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
-                }
+                DebugPrint("Alpha up");
+                globalAlpha = Min(0xFF, globalAlpha + 0xF);
+                forceUpdate(window);
             }
             if(isDown && !wasDown && isPressedCK(SHIFT))
             {
@@ -149,11 +171,9 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
         {
             if (isDown && !wasDown && isPressedCK(CTRL))
             {
-                if (globalAlpha != 0x0)
-                {
-                    globalAlpha -= 0xF;
-                    SetLayeredWindowAttributes(window, 0, globalAlpha, LWA_ALPHA);
-                }
+                DebugPrint("Alpha down");
+                globalAlpha = Max(0x0, globalAlpha - 0xF);
+                forceUpdate(window);
             }
             if(isDown && !wasDown && isPressedCK(SHIFT))
             {
@@ -165,6 +185,28 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 }
             }
         }break;
+
+        case VK_F1:
+        {
+            if (isDown && !wasDown)
+            {
+                if(treatAsLayered)
+                {
+                    DebugPrint("Change treatAsLayerd false");
+                    treatAsLayered = false;
+                    SetWindowLong(window, GWL_EXSTYLE,
+                                  GetWindowLong(window, GWL_EXSTYLE) & (~WS_EX_LAYERED));
+                }
+                else
+                {
+                    DebugPrint("Change treatAsLayerd true");
+                    treatAsLayered = true;
+                    SetWindowLong(window, GWL_EXSTYLE,
+                                  GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
+                }
+                forceUpdate(window);
+            }
+        }
     }
 
 }
@@ -204,7 +246,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
-            paintToScreen(deviceContext, defPalette->getImage(), defPalette->getSize());
+            paintToScreen(window, deviceContext, defPalette->getImage(), defPalette->getSize());
             EndPaint(window, &paintStruct);
         } break;
 
@@ -309,7 +351,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
                 WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
-                WS_VISIBLE|WS_POPUPWINDOW, // WS_POPUP, WS_POPUPWINDOW
+                WS_VISIBLE|WS_POPUP, // WS_POPUP, WS_POPUPWINDOW
                 0,
                 0,
                 resolutions[resIndex].x,
@@ -323,8 +365,6 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         {
             DebugPrint("window created");
             // some internet magic to be able to change alpha levels
-            SetWindowLong(windowHandle, GWL_EXSTYLE,
-                          GetWindowLong(windowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
             resizePaletteAndHdc(resolutions[resIndex]);
 
             MSG message;

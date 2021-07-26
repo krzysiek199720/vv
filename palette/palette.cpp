@@ -16,8 +16,11 @@ void * palette::Palette::getImage()
 //    zeroing imageRaw so uncovered areas are redrawn and transparent
     memset(paletteMemory.address, 0x0, (size.x * size.y * CHANNELS) );
 
-        if(image.getImageRaw() == 0)
+    if(image.getImageRaw() == 0 )
+    {
+        processed = true;
         return paletteMemory.address;
+    }
 
 //    actual imageRaw making
     {
@@ -41,7 +44,6 @@ void * palette::Palette::getImage()
             image_read_start.x = (finalOffset.x < 0) ?  -(finalOffset.x) : 0;
             image_read_start.y = (finalOffset.y < 0) ?  -(finalOffset.y) : 0;
 
-
             image_read_end.x = ((finalOffset.x + imageSize.x) >= size.x) ?
                     imageSize.x - ((finalOffset.x + imageSize.x) - size.x) :
                     imageSize.x;
@@ -54,7 +56,6 @@ void * palette::Palette::getImage()
 
             uint32* pixelPalette = ((uint32*) paletteMemory.address) +
                     ((palette_write.y * size.x) + palette_write.x);
-
             uint32* pixelImage = ((uint32*) imageAddress) +
                                  ((image_read_start.y * imageSize.x) + image_read_start.x);
 
@@ -74,10 +75,9 @@ void * palette::Palette::getImage()
 //    end:- actual imageRaw making
     // FIXME library doesnt support BGR, and windows RGB
     // What to do?  Can i make windows use RGB?
-    uint32* pixel;
-    for(uint32 i = 0; i < (size.x * size.y); ++i)
+    uint32* pixel = (uint32*)paletteMemory.address;
+    for(; pixel < ((uint32*)paletteMemory.address + (size.x * size.y)); pixel++)
     {
-        pixel = &((uint32*)paletteMemory.address)[i];
         *pixel = (uint32)RGB2BGR(*pixel);
     }
 
@@ -144,9 +144,6 @@ void palette::Palette::movePalette(Vector2 change) {
     offset.y += change.y;
     processed = false;
 }
-
-
-
 
 //int res = stbir_resize_uint8(
 //        (const unsigned char*) image.imageRaw, image.sizeRaw.x, image.sizeRaw.y, 0,

@@ -31,4 +31,6 @@ uint8 resIndex = 0;
 #define IMGMOVE 0b00001000
 Vector2 moveStartPoint = {0};
 
+bool treatAsLayered = false;
+
 #endif //VV_WIN32_H
