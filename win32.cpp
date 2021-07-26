@@ -321,13 +321,18 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_LBUTTONDOWN:
         {
             DebugPrint("Mouse click");
+            Vector2 clickPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
             if(isSetting(CTRL))
             {
                 DebugPrint("Setting IMGMOVE");
                 setSetting(IMGMOVE);
+                moveStartPoint = clickPoint;
                 // start move actions
-                moveStartPoint = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                break;
             }
+            DebugPrint("Select image mouse");
+            defPalette->selectImage(&clickPoint);
+            forceUpdate(window);
         }break;
         case WM_LBUTTONUP:
         {

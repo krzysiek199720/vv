@@ -19,6 +19,7 @@ namespace palette
         Vector2 size;
         Memory paletteMemory;
         bool processed = false;
+        Image* selectedImage = 0;
     public:
         void* getImage();
         void setImage(const char *);
@@ -28,6 +29,8 @@ namespace palette
 
         void moveImage(Vector2);
         void movePalette(Vector2);
+
+        void selectImage(Vector2*); // nullptr means deselect
     };
 }
 

@@ -56,6 +56,7 @@ void * palette::Palette::getImage()
 
             uint32* pixelPalette = ((uint32*) paletteMemory.address) +
                     ((palette_write.y * size.x) + palette_write.x);
+            uint32* pixelPaletteStart = pixelPalette; // for later use
             uint32* pixelImage = ((uint32*) imageAddress) +
                                  ((image_read_start.y * imageSize.x) + image_read_start.x);
 
@@ -67,6 +68,63 @@ void * palette::Palette::getImage()
                 }
                 pixelPalette += (size.x - pixels_count_x);
                 pixelImage += (imageSize.x - pixels_count_x);
+            }
+            // if this is selected image do a rectangle border
+            if(&image == selectedImage)
+            {
+                DebugPrint("Border draw");
+//                bool borderTop = (palette_write.y >= 0);
+//                bool borderBottom = (image_read_end.y >= imageSize.y);
+//                bool borderLeft = (palette_write.x >= 0);
+//                bool borderRight = (image_read_end.x >= imageSize.x);
+
+                bool borderTop = (finalOffset.y >= 0);
+                bool borderBottom = (image_read_end.y >= imageSize.y);
+                bool borderLeft = (finalOffset.x >= 0);
+                bool borderRight = (image_read_end.x >= imageSize.x);
+
+                uint32 color = 0xFF0000FF;
+                uint32* pixel;
+                if(borderTop)
+                {
+                    DebugPrint("Border draw top");
+                    pixel = pixelPaletteStart;
+                    for(uint32 i = 0; i < pixels_count_x; ++i)
+                    {
+                        *pixel++ = color;
+                    }
+                }
+                if(borderBottom)
+                {
+                    DebugPrint("Border draw bottom");
+                    pixel = pixelPaletteStart + (pixels_count_y * size.x);
+                    for(uint32 i = 0; i < pixels_count_x; ++i)
+                    {
+                        *pixel++ = color;
+                    }
+                }
+                if(borderLeft)
+                {
+                   DebugPrint("Border draw left");
+                    pixel = pixelPaletteStart;
+                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    {
+                        *pixel = color;
+                        pixel += size.x;
+                    }
+                }
+                if(borderRight)
+                {
+                  DebugPrint("Border draw right");
+                    pixel = pixelPaletteStart + pixels_count_x;
+                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    {
+                        *pixel = color;
+                        pixel += size.x;
+                    }
+                }
+
+                DebugPrint("Border draw end");
             }
         }
         else
@@ -145,6 +203,23 @@ void palette::Palette::movePalette(Vector2 change) {
     processed = false;
 }
 
+void palette::Palette::selectImage(Vector2* position)
+{
+    DebugPrint("Select image mouse");
+
+    if(!position)
+    {
+        DebugPrint("Deselectiong image");
+        selectedImage = 0;
+        return;
+    }
+    // FIXME mostly for future, as right now there is only one image
+    selectedImage = &image;
+    processed = false;
+}
+
+//image resize example
+//
 //int res = stbir_resize_uint8(
 //        (const unsigned char*) image.imageRaw, image.sizeRaw.x, image.sizeRaw.y, 0,
 //        (unsigned char  *)paletteMemory.address, size.x, size.y, 0,
