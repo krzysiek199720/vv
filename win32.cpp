@@ -108,6 +108,9 @@ void resizeWindow(HWND window, Vector2 resolution)
 
 void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
 {
+    if(!hasFocus)
+        return;
+
     bool isDown = (lParam & (1 << 31)) == 0;
     bool wasDown = (lParam & (1 << 30)) != 0;
 
@@ -220,6 +223,36 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             if(wParam) DebugPrint("Activate app");
             else DebugPrint("Deactivate app");
        } break;
+
+        case WM_SETFOCUS:
+        {
+            hasFocus = true;
+            DebugPrint("Has focus");
+        }break;
+        case WM_KILLFOCUS:
+        {
+            DebugPrint("Lost focus");
+            hasFocus = false;
+        }break;
+
+        case WM_HOTKEY:
+        {
+            if(wParam == IDHOT_SNAPDESKTOP || wParam == IDHOT_SNAPWINDOW)
+            {
+                result = DefWindowProcA(window, message, wParam, lParam);
+                break;
+            }
+            // switch for future hotkeys
+            switch(wParam)
+            {
+                case GETFOCUSHK:
+                {
+                    DebugPrint("GETFOCUS Hotkey pressed");
+                    SetForegroundWindow(window);
+                }break;
+            }
+
+        }break;
 
         case WM_CLOSE:
         {
@@ -364,7 +397,10 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
         if(windowHandle)
         {
             DebugPrint("window created");
-            // some internet magic to be able to change alpha levels
+
+//            set hotkeys
+            RegisterHotKey(windowHandle, GETFOCUSHK, MOD_WIN, VK_F8);
+
             resizePaletteAndHdc(resolutions[resIndex]);
 
             MSG message;

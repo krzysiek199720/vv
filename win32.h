@@ -32,5 +32,8 @@ uint8 resIndex = 0;
 Vector2 moveStartPoint = {0};
 
 bool treatAsLayered = false;
+bool hasFocus = true;
+
+#define GETFOCUSHK 1
 
 #endif //VV_WIN32_H
