@@ -46,7 +46,7 @@ void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
         BLENDFUNCTION blend =  {
         AC_SRC_OVER,
         0,
-        globalAlpha,
+        noAlpha ? (uint8)0 : globalAlpha,
         AC_SRC_ALPHA
         };
         UpdateLayeredWindow(
@@ -207,6 +207,7 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
                 }
+                noAlpha = false;
                 forceUpdate(window);
             }
         }
@@ -249,6 +250,15 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 {
                     DebugPrint("GETFOCUS Hotkey pressed");
                     SetForegroundWindow(window);
+                }break;
+                case ALPHATOGGLE:
+                {
+                    DebugPrint("ALPHATOGGLE Hotkey pressed");
+                    if(treatAsLayered)
+                    {
+                        noAlpha = !noAlpha;
+                        forceUpdate(window);
+                    }
                 }break;
             }
 
@@ -400,6 +410,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
 
 //            set hotkeys
             RegisterHotKey(windowHandle, GETFOCUSHK, MOD_WIN, VK_F8);
+            RegisterHotKey(windowHandle, ALPHATOGGLE, MOD_CONTROL|MOD_WIN, VK_F8);
 
             resizePaletteAndHdc(resolutions[resIndex]);
 

@@ -33,7 +33,9 @@ Vector2 moveStartPoint = {0};
 
 bool treatAsLayered = false;
 bool hasFocus = true;
+bool noAlpha = false;
 
 #define GETFOCUSHK 1
+#define ALPHATOGGLE 2
 
 #endif //VV_WIN32_H
