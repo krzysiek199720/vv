@@ -404,7 +404,11 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             }
 
         }break;
-
+        case WM_RBUTTONDOWN:
+        {
+            defPalette->selectImage(0);
+            forceUpdate(window);
+        }break;
         case WM_MOUSEMOVE:
         {
             if(isSetting(IMGMOVE))
