@@ -245,6 +245,15 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 unsetSetting(ALT);
             }
         }break;
+
+        case VK_DELETE:
+        {
+            if(isDown && !wasDown)
+            {
+                defPalette->deleteImage();
+                forceUpdate(window);
+            }
+        }break;
     }
 
 }

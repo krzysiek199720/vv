@@ -369,6 +369,12 @@ bool palette::Palette::isImageSelected()
 
 void palette::Palette::deleteImage()
 {
+    if(isImageSelected())
+    {
+        images.erase(selectedImage);
+        selectedImageId = -1;
+        processed = false;
+    }
 }
 
 void palette::Palette::changeZindex(int32 change)
