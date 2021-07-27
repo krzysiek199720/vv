@@ -44,6 +44,7 @@ namespace palette
         bool setSelectedRatio(float);
         bool changeSelectedRatio(float);
         bool resetSelectedRatio();
+        void changeZindex(int32);
     protected:
         static bool zindexSortCmp(const std::shared_ptr<Image>, const std::shared_ptr<Image>);
         bool isPointInImage(std::list<std::shared_ptr<Image>>::iterator, Vector2);

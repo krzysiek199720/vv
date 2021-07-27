@@ -459,6 +459,17 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
             }
         }break;
+        case WM_MOUSEWHEEL:
+        {
+//            this is some weird magic with it, im just gonna always act like it
+//            was 1 scroll of the wheel
+            int32 resultChange = ((int32)wParam < 0) ? -1 : 1;
+            DebugPrint("WM_MOUSEWHEEL");
+            DebugPrint((int32)wParam);
+            DebugPrint(resultChange);
+            defPalette->changeZindex(resultChange);
+            forceUpdate(window);
+        }break;
 
         default: {
             result = DefWindowProcA(window, message, wParam, lParam);

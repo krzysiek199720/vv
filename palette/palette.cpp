@@ -151,6 +151,7 @@ void palette::Palette::addImage(const char * filename)
 //    not sure if it is  worthwhile, maybe sort if fast enough
     images.sort(zindexSortCmp);
 
+    selectedImageId = -1;
     processed = false;
 }
 
@@ -198,7 +199,8 @@ void palette::Palette::setSize(Vector2 newSize)
     processed = false;
 }
 
-void palette::Palette::moveImage(Vector2 change) {
+void palette::Palette::moveImage(Vector2 change)
+{
     if(!isImageSelected())
     {
         return;
@@ -211,7 +213,8 @@ void palette::Palette::moveImage(Vector2 change) {
     processed = false;
 }
 
-void palette::Palette::movePalette(Vector2 change) {
+void palette::Palette::movePalette(Vector2 change)
+{
     offset.x += change.x;
     offset.y += change.y;
     processed = false;
@@ -323,7 +326,8 @@ void palette::Palette::selectImage(Vector2* position)
     processed = false;
 }
 
-bool palette::Palette::setSelectedRatio(float newRatio) {
+bool palette::Palette::setSelectedRatio(float newRatio)
+{
     if(isImageSelected())
     {
         bool success = (*selectedImage)->setImageRatio(newRatio);
@@ -335,7 +339,8 @@ bool palette::Palette::setSelectedRatio(float newRatio) {
     return false;
 }
 
-bool palette::Palette::changeSelectedRatio(float ratioChange) {
+bool palette::Palette::changeSelectedRatio(float ratioChange)
+{
     if(isImageSelected())
     {
         bool success = (*selectedImage)->changeImageRatio(ratioChange);
@@ -347,7 +352,8 @@ bool palette::Palette::changeSelectedRatio(float ratioChange) {
     return false;
 }
 
-bool palette::Palette::resetSelectedRatio() {
+bool palette::Palette::resetSelectedRatio()
+{
     if(!isImageSelected())
         return false;
 
@@ -356,11 +362,23 @@ bool palette::Palette::resetSelectedRatio() {
     return true;
 }
 
-bool palette::Palette::isImageSelected() {
+bool palette::Palette::isImageSelected()
+{
     return selectedImageId != -1;
 }
 
-void palette::Palette::deleteImage() {
-//    TODO remember to image (delete *ptr)
+void palette::Palette::deleteImage()
+{
 }
 
+void palette::Palette::changeZindex(int32 change)
+{
+    if(isImageSelected())
+    {
+        if(change == 0)
+            return;
+        (*selectedImage)->setZindex((*selectedImage)->getZindex() + change);
+        images.sort(zindexSortCmp);
+        processed = false;
+    }
+}

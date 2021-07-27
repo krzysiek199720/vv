@@ -120,8 +120,10 @@ bool palette::Image::resetImageRatio() {
     return true;
 }
 
-void palette::Image::setZindex(int32_t newZindex) {
+void palette::Image::setZindex(int32 newZindex) {
     zindex = newZindex;
+    DebugPrint("SetZindex image");
+    DebugPrint(newZindex);
 }
 
 int32 palette::Image::getZindex() const {
