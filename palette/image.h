@@ -38,6 +38,7 @@ namespace palette
         bool setImageRatio(float);
         bool changeImageRatio(float);
         bool resetImageRatio();
+        float getImageRatio();
 
         void setZindex(int32);
         int32 getZindex() const;

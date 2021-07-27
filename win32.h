@@ -29,7 +29,7 @@ void unsetSetting(uint32 key){setting &= ~(key);}
 
 #define CTRL    0b000000001
 #define SHIFT   0b000000010
-#define ALT    0b000000100
+#define ALT     0b000000100
 #define TAB     0b000001000
 #define IMGMOVE 0b000010000
 #define LAYERED 0b000100000
@@ -38,6 +38,7 @@ void unsetSetting(uint32 key){setting &= ~(key);}
 #define RESIMG  0b100000000 // image resize
 
 Vector2 moveStartPoint = {0}; // used for both palette move and img resize
+Vector2 movePrePoint = {0};
 
 // hotkeys
 #define GETFOCUSHK 1

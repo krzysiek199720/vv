@@ -4,6 +4,28 @@
 
 #define RGB2BGR(a_ulColor) ((a_ulColor) & 0xFF000000) | (((a_ulColor) & 0xFF0000) >> 16) | ((a_ulColor) & 0x00FF00) | (((a_ulColor) & 0x0000FF) << 16)
 
+
+void palette::Palette::calculateWriteRegion(Vector2 finalOffset, Vector2 size, Vector2 imageSize,
+                          Vector2* palette_write, Vector2* image_read_start,
+                          Vector2* image_read_end, Vector2* finalSize)
+{
+    palette_write->x = (finalOffset.x < 0) ? 0 : finalOffset.x;
+    palette_write->y = (finalOffset.y < 0) ? 0 : finalOffset.y;
+
+    image_read_start->x = (finalOffset.x < 0) ?  -(finalOffset.x) : 0;
+    image_read_start->y = (finalOffset.y < 0) ?  -(finalOffset.y) : 0;
+
+    image_read_end->x = ((finalOffset.x + imageSize.x) >= size.x) ?
+                       imageSize.x - ((finalOffset.x + imageSize.x) - size.x) :
+                       imageSize.x;
+    image_read_end->y = ((finalOffset.y + imageSize.y) >= size.y) ?
+                       imageSize.y - ((finalOffset.y + imageSize.y) - size.y) :
+                       imageSize.y;
+
+    finalSize->x = image_read_end->x - image_read_start->x;
+    finalSize->y = image_read_end->y - image_read_start->y;
+}
+
 void * palette::Palette::getImage()
 {
     if(processed)
@@ -24,6 +46,7 @@ void * palette::Palette::getImage()
 //    actual image making
     for (imageIt = images.begin(); imageIt != images.end(); ++imageIt)
     {
+//        Get info and check if need to be rendered
         std::shared_ptr<Image> image = (*imageIt);
         Vector2 imageSize = {0};
         void* imageAddress = (*imageIt)->getImage(&imageSize);
@@ -35,25 +58,15 @@ void * palette::Palette::getImage()
 
         if(fitsX && fitsY)
         {
+//            Calculate renderable image portions
             Vector2 palette_write = {0};
             Vector2 image_read_start = {0};
             Vector2 image_read_end = {0};
+            Vector2 pixels_count = {0};
 
-            palette_write.x = (finalOffset.x < 0) ? 0 : finalOffset.x;
-            palette_write.y = (finalOffset.y < 0) ? 0 : finalOffset.y;
-
-            image_read_start.x = (finalOffset.x < 0) ?  -(finalOffset.x) : 0;
-            image_read_start.y = (finalOffset.y < 0) ?  -(finalOffset.y) : 0;
-
-            image_read_end.x = ((finalOffset.x + imageSize.x) >= size.x) ?
-                    imageSize.x - ((finalOffset.x + imageSize.x) - size.x) :
-                    imageSize.x;
-            image_read_end.y = ((finalOffset.y + imageSize.y) >= size.y) ?
-                    imageSize.y - ((finalOffset.y + imageSize.y) - size.y) :
-                    imageSize.y;
-
-            int32 pixels_count_x = image_read_end.x - image_read_start.x;
-            int32 pixels_count_y = image_read_end.y - image_read_start.y;
+            calculateWriteRegion(finalOffset, size, imageSize,
+                                 &palette_write, &image_read_start,
+                                 &image_read_end, &pixels_count);
 
             uint32* pixelPalette = ((uint32*) paletteMemory.address) +
                     ((palette_write.y * size.x) + palette_write.x);
@@ -62,59 +75,111 @@ void * palette::Palette::getImage()
                                  ((image_read_start.y * imageSize.x) + image_read_start.x);
 
 //            FIXME might be able to do a rowwise memcpy
-            for(int32 i = 0; i < pixels_count_y; ++i)
+            for(int32 i = 0; i < pixels_count.y; ++i)
             {
-                for(int32 j = 0; j < pixels_count_x; ++j)
+                for(int32 j = 0; j < pixels_count.x; ++j)
                 {
                     *pixelPalette++ = *pixelImage++;
                 }
-                pixelPalette += (size.x - pixels_count_x);
-                pixelImage += (imageSize.x - pixels_count_x);
+                pixelPalette += (size.x - pixels_count.x);
+                pixelImage += (imageSize.x - pixels_count.x);
             }
 
 
-            // if this is selected image do a rectangle border
             if(image->id == selectedImageId)
             {
-                bool borderTop = (finalOffset.y >= 0);
-                bool borderBottom = (image_read_end.y >= imageSize.y);
-                bool borderLeft = (finalOffset.x >= 0);
-                bool borderRight = (image_read_end.x >= imageSize.x);
+//                Border
+                {
+                    bool borderTop = (finalOffset.y >= 0);
+                    bool borderBottom = (image_read_end.y >= imageSize.y);
+                    bool borderLeft = (finalOffset.x >= 0);
+                    bool borderRight = (image_read_end.x >= imageSize.x);
 
-                uint32 color = 0xFF0000FF;
-                uint32* borderPixel;
-                if(borderTop)
-                {
-                    borderPixel = pixelPaletteStart;
-                    for(uint32 i = 0; i < pixels_count_x; ++i)
+                    uint32 color = 0xFF0000FF;
+                    uint32* borderPixel;
+                    if(borderTop)
                     {
-                        *borderPixel++ = color;
+                        borderPixel = pixelPaletteStart;
+                        for(uint32 i = 0; i < pixels_count.x; ++i)
+                        {
+                            *borderPixel++ = color;
+                        }
                     }
-                }
-                if(borderBottom)
-                {
-                    borderPixel = pixelPaletteStart + (pixels_count_y * size.x);
-                    for(uint32 i = 0; i < pixels_count_x; ++i)
+                    if(borderBottom)
                     {
-                        *borderPixel++ = color;
+                        borderPixel = pixelPaletteStart + (pixels_count.y * size.x);
+                        for(uint32 i = 0; i < pixels_count.x; ++i)
+                        {
+                            *borderPixel++ = color;
+                        }
                     }
-                }
-                if(borderLeft)
-                {
-                    borderPixel = pixelPaletteStart;
-                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    if(borderLeft)
                     {
-                        *borderPixel = color;
-                        borderPixel += size.x;
+                        borderPixel = pixelPaletteStart;
+                        for(uint32 i = 0; i < pixels_count.y; ++i)
+                        {
+                            *borderPixel = color;
+                            borderPixel += size.x;
+                        }
                     }
-                }
-                if(borderRight)
-                {
-                    borderPixel = pixelPaletteStart + pixels_count_x;
-                    for(uint32 i = 0; i < pixels_count_y; ++i)
+                    if(borderRight)
                     {
-                        *borderPixel = color;
-                        borderPixel += size.x;
+                        borderPixel = pixelPaletteStart + pixels_count.x;
+                        for(uint32 i = 0; i < pixels_count.y; ++i)
+                        {
+                            *borderPixel = color;
+                            borderPixel += size.x;
+                        }
+                    }
+//                    Resize preview
+                    if(showPreviewRatio)
+                    {
+                        Vector2 sizeRaw = (*selectedImage)->getImageRawSize();
+                        Vector2 newSize = {(int32)(sizeRaw.x * resizePreviewRatio), (int32)(sizeRaw.y * resizePreviewRatio)};
+
+                        calculateWriteRegion(finalOffset, size, newSize,
+                                             &palette_write, &image_read_start,
+                                             &image_read_end, &pixels_count);
+
+                        pixelPalette = ((uint32*) paletteMemory.address) +
+                                               ((palette_write.y * size.x) + palette_write.x);
+
+                        bool hasTop = finalOffset.y >= 0;
+                        bool hasBottom = (finalOffset.y + newSize.y) < size.y;
+//                        DebugPrint("ratPre");
+//                        DebugPrint((finalOffset.y + imageSize.y));
+//                        DebugPrint(size.y);
+                        bool hasLeft = finalOffset.x >= 0;
+                        bool hasRight = (finalOffset.x + newSize.x) < size.x;
+
+                        if(hasTop)
+                        {
+                            memset(pixelPalette, 0xFF, pixels_count.x * CHANNELS);
+                        }
+                        if(hasBottom)
+                        {
+                            DebugPrint("has bottom");
+                            auto bottomStart = pixelPalette + ((pixels_count.y - 1) * size.x);
+                            memset(bottomStart, 0xFF, pixels_count.x * CHANNELS);
+                        }
+                        if(hasLeft)
+                        {
+                            auto leftPix = pixelPalette;
+                            for(uint32 i = 0; i < pixels_count.y; ++i)
+                            {
+                                *leftPix = 0xFFFFFFFF;
+                                leftPix += size.x;
+                            }
+                        }
+                        if(hasRight)
+                        {
+                            auto rightPix = pixelPalette + pixels_count.x - 1;
+                            for(uint32 i = 0; i < pixels_count.y; ++i)
+                            {
+                                *rightPix = 0xFFFFFFFF;
+                                rightPix += size.x;
+                            }
+                        }
                     }
                 }
             }
@@ -323,6 +388,7 @@ void palette::Palette::selectImage(Vector2* position)
     }
 
     selectByVector2(*position);
+    resizePreviewRatio = (*selectedImage)->getImageRatio();
     processed = false;
 }
 
@@ -341,11 +407,15 @@ bool palette::Palette::setSelectedRatio(float newRatio)
 
 bool palette::Palette::changeSelectedRatio(float ratioChange)
 {
+    DebugPrint("changeSelectedRatio");
     if(isImageSelected())
     {
+        DebugPrint("changeSelectedRatio if");
         bool success = (*selectedImage)->changeImageRatio(ratioChange);
         if(!success)
             return false;
+        resizePreviewRatio = (*selectedImage)->getImageRatio();
+        showPreviewRatio = false;
         processed = false;
         return true;
     }
@@ -387,4 +457,21 @@ void palette::Palette::changeZindex(int32 change)
         images.sort(zindexSortCmp);
         processed = false;
     }
+}
+
+bool palette::Palette::setResizePreview(float newRatio) {
+    if(isImageSelected())
+    {
+        if(newRatio <= 0.0)
+            return false;
+        resizePreviewRatio = newRatio;
+        showPreviewRatio = true;
+        processed = false;
+        return true;
+    }
+    return false;
+}
+
+bool palette::Palette::changeResizePreview(float ratioChange) {
+    return setResizePreview((*selectedImage)->getImageRatio() + ratioChange);
 }

@@ -27,6 +27,8 @@ namespace palette
         std::list<std::shared_ptr<Image>>::iterator selectedImage;
 
         uint32 nextId = 0;
+        float resizePreviewRatio = 1.0;
+        bool showPreviewRatio = false;
     public:
         void* getImage();
         void addImage(const char *);
@@ -44,11 +46,15 @@ namespace palette
         bool setSelectedRatio(float);
         bool changeSelectedRatio(float);
         bool resetSelectedRatio();
+        bool setResizePreview(float);
+        bool changeResizePreview(float);
+
         void changeZindex(int32);
     protected:
         static bool zindexSortCmp(const std::shared_ptr<Image>, const std::shared_ptr<Image>);
         bool isPointInImage(std::list<std::shared_ptr<Image>>::iterator, Vector2);
         void selectByVector2(Vector2);
+        void calculateWriteRegion(Vector2, Vector2, Vector2, Vector2*, Vector2*, Vector2*, Vector2*);
     };
 }
 

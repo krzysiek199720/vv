@@ -74,6 +74,7 @@ Vector2 palette::Image::getImageSize() {
 
 bool palette::Image::setImageRatio(float newRatio)
 {
+    DebugPrint("setImageRatio");
     if(!imageRaw)
         return false;
     if(newRatio == 1.0)
@@ -105,6 +106,7 @@ bool palette::Image::setImageRatio(float newRatio)
 }
 
 bool palette::Image::changeImageRatio(float ratioChange) {
+    DebugPrint("changeImageRatio");
     float newRatio = resizeRatio + ratioChange;
     if(newRatio <= 0.0)
         return false;
@@ -128,4 +130,8 @@ void palette::Image::setZindex(int32 newZindex) {
 
 int32 palette::Image::getZindex() const {
     return zindex;
+}
+
+float palette::Image::getImageRatio() {
+    return resizeRatio;
 }

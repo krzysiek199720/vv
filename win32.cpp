@@ -371,6 +371,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             {
                 setSetting(RESIMG);
                 moveStartPoint = clickPoint;
+                movePrePoint = clickPoint;
                 break;
             }
             defPalette->selectImage(&clickPoint);
@@ -444,27 +445,31 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             }
             if(isSetting(RESIMG))
             {
-                // TODO make it show rectangle border of new size as real resize is very
-                // resouce heavy
-//                Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-//                Vector2 move = {
-//                        newPos.x - moveStartPoint.x,
-//                        newPos.y - moveStartPoint.y,
-//                };
-//                moveStartPoint = newPos;
-//                // FIXME i hate to use sqrt here,
-//                //  maybe some other method to get a nice move pattern for scaling
-//                double moveSize = sqrt(move.x * move.x + move.y * move.y);
-//                int32 moveSizeInt = lround(moveSize);
-//
-//                if(moveSizeInt <= 0)
-//                    break;
-//
-//                float scaledMove = isSetting(SHIFT) ? moveSizeInt * LARGESTEP : moveSizeInt * SMALLSTEP;
-//
-//                //
-//
-//                forceUpdate(window);
+                DebugPrint("no.");
+                // not necesary but ill check anyway to prevent a few calculations
+                if(defPalette->isImageSelected())
+                {
+                    DebugPrint("yes.");
+                    Vector2 newPos = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    Vector2 move = {
+                            newPos.x - moveStartPoint.x,
+                            newPos.y - moveStartPoint.y,
+                    };
+
+                    // FIXME i hate to use sqrt here,
+                    //  maybe some other method to get a nice move pattern for scaling
+                    double moveSize = sqrt(move.x * move.x + move.y * move.y);
+                    int32 moveSizeInt = lround(moveSize);
+                    if(moveSizeInt <= 0)
+                        break;
+
+                    float scaledMove = isSetting(SHIFT) ? moveSizeInt * LARGESTEP : moveSizeInt * SMALLSTEP;
+                    if(move.x < 0 && move.y < 0)
+                        scaledMove = -scaledMove;
+                    defPalette->changeResizePreview(scaledMove);
+
+                    forceUpdate(window);
+                }
 
             }
         }break;
