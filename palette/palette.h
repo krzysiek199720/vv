@@ -31,6 +31,7 @@ namespace palette
         void movePalette(Vector2);
 
         void selectImage(Vector2*); // nullptr means deselect
+        bool isImageSelected();
 
         bool setSelectedRatio(float);
         bool changeSelectedRatio(float);

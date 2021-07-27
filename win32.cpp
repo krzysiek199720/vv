@@ -246,8 +246,8 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
     }
 
 }
-
 LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
+
 {
     LRESULT result = 0;
     switch(message) {
@@ -420,7 +420,16 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 };
                 moveStartPoint = newPos;
 
-                defPalette->movePalette(pictureShift);
+                if(defPalette->isImageSelected())
+                {
+                    DebugPrint("Move image");
+                    defPalette->moveImage(pictureShift);
+                }
+                else
+                {
+                    DebugPrint("Move palette");
+                    defPalette->movePalette(pictureShift);
+                }
                 forceUpdate(window);
                 break;
             }

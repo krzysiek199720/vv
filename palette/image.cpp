@@ -117,8 +117,9 @@ bool palette::Image::changeImageRatio(float ratioChange) {
 }
 
 bool palette::Image::resetImageRatio() {
-    if(!memoryFree(&image))
-        return false;
+    if(image.address)
+        if(!memoryFree(&image))
+            return false;
 
     resizeRatio = 1.0;
     size = {0};

@@ -241,10 +241,12 @@ bool palette::Palette::resetSelectedRatio() {
     if(!selectedImage)
         return false;
 
-    DebugPrint("Reset ratio palette");
-
     selectedImage->resetImageRatio();
     processed = false;
     return true;
+}
+
+bool palette::Palette::isImageSelected() {
+    return selectedImage != 0;
 }
 
