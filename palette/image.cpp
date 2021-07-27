@@ -3,7 +3,8 @@
 #include "../libraries/stb_image.h"
 #include "../libraries/stb_image_resize.h"
 
-palette::Image::Image()
+palette::Image::Image(uint32 newId)
+    :id(newId)
 {
 }
 
@@ -19,8 +20,7 @@ void palette::Image::setImage(const char * filename) {
     if(data)
     {
         imageRaw = data;
-        sizeRaw.x = x;
-        sizeRaw.y = y;
+        sizeRaw = {x, y};
         imageChannels = CHANNELS;
     }
     else
@@ -84,8 +84,6 @@ bool palette::Image::setImageRatio(float newRatio)
 
     Vector2 newSize = {(int32)(sizeRaw.x * newRatio), (int32)(sizeRaw.y * newRatio)};
 
-    printf("%d %d\n", newSize.x, newSize.y);
-
     memoryFree(&image);
 
     image = memoryAlloc(newSize.x * newSize.y * CHANNELS);
@@ -120,4 +118,12 @@ bool palette::Image::resetImageRatio() {
     resizeRatio = 1.0;
     size = {0};
     return true;
+}
+
+void palette::Image::setZindex(int32_t newZindex) {
+    zindex = newZindex;
+}
+
+int32 palette::Image::getZindex() const {
+    return zindex;
 }

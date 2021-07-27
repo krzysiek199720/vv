@@ -336,7 +336,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 break;
             }
             DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
-            defPalette->setImage(filename);
+            defPalette->addImage(filename);
 
             forceUpdate(window);
         } break;
@@ -424,12 +424,10 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
                 if(defPalette->isImageSelected())
                 {
-                    DebugPrint("Move image");
                     defPalette->moveImage(pictureShift);
                 }
                 else
                 {
-                    DebugPrint("Move palette");
                     defPalette->movePalette(pictureShift);
                 }
                 forceUpdate(window);

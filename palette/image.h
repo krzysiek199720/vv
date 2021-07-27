@@ -9,12 +9,14 @@ namespace palette
     class Image
     {
     public:
-        Image();
+        Image(uint32);
         ~Image();
     public:
         uint32 imageChannels = 0;
         Vector2 offset = {0};
+        const int32 id;
     protected:
+        int32 zindex = 0;
         Vector2 sizeRaw = {0};
         void* imageRaw = 0;
 
@@ -36,6 +38,9 @@ namespace palette
         bool setImageRatio(float);
         bool changeImageRatio(float);
         bool resetImageRatio();
+
+        void setZindex(int32);
+        int32 getZindex() const;
     };
 }
 

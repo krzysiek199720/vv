@@ -1,6 +1,9 @@
 #ifndef VV_PALETTE_H
 #define VV_PALETTE_H
 
+#include <memory>
+#include <list>
+
 #include "../main.h"
 #include "../archdef.h"
 #include "image.h"
@@ -13,16 +16,21 @@ namespace palette
         Palette(int32 width, int32 height);
         ~Palette();
     public:
-        Image image;
-        Vector2 offset;
+        std::list<std::shared_ptr<Image>> images;
     protected:
+        Vector2 offset;
         Vector2 size;
         Memory paletteMemory;
         bool processed = false;
-        Image* selectedImage = 0;
+
+        int32 selectedImageId = -1;
+        std::list<std::shared_ptr<Image>>::iterator selectedImage;
+
+        uint32 nextId = 0;
     public:
         void* getImage();
-        void setImage(const char *);
+        void addImage(const char *);
+        void deleteImage();
 
         void setSize(Vector2);
         Vector2 getSize();
@@ -36,6 +44,10 @@ namespace palette
         bool setSelectedRatio(float);
         bool changeSelectedRatio(float);
         bool resetSelectedRatio();
+    protected:
+        static bool zindexSortCmp(const std::shared_ptr<Image>, const std::shared_ptr<Image>);
+        bool isPointInImage(std::list<std::shared_ptr<Image>>::iterator, Vector2);
+        void selectByVector2(Vector2);
     };
 }
 

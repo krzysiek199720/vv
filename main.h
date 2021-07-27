@@ -32,6 +32,7 @@ struct Vector2
 {
     int32 x;
     int32 y;
+    static Vector2 add(Vector2 v1, Vector2 v2){return {v1.x + v2.x, v1.y + v2.y};}
 };
 
 inline void DebugPrint(const char* str...)
