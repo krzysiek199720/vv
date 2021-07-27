@@ -27,8 +27,10 @@ Memory memoryAlloc(uint32 size)
 bool memoryFree(Memory* memory)
 {
     bool result;
-    result = VirtualFree(memory->address, 0, MEM_RELEASE);
-
+    if(memory->address)
+        result = VirtualFree(memory->address, 0, MEM_RELEASE);
+    else
+        result = true;
     if(result)
     {
         *memory = {0};

@@ -9,8 +9,7 @@ palette::Image::Image()
 
 palette::Image::~Image() {
     stbi_image_free(this->imageRaw);
-    if(image.address)
-        memoryFree(&image);
+    memoryFree(&image);
 }
 
 void palette::Image::setImage(const char * filename) {
@@ -31,8 +30,7 @@ void palette::Image::setImage(const char * filename) {
 
     resizeRatio = 1.0;
     size = {0};
-    if(image.address)
-        memoryFree(&image);
+    memoryFree(&image);
     image = {0};
     offset = {0};
 }
@@ -88,8 +86,7 @@ bool palette::Image::setImageRatio(float newRatio)
 
     printf("%d %d\n", newSize.x, newSize.y);
 
-    if(image.address)
-        memoryFree(&image);
+    memoryFree(&image);
 
     image = memoryAlloc(newSize.x * newSize.y * CHANNELS);
     if(!image.address)
@@ -117,9 +114,8 @@ bool palette::Image::changeImageRatio(float ratioChange) {
 }
 
 bool palette::Image::resetImageRatio() {
-    if(image.address)
-        if(!memoryFree(&image))
-            return false;
+    if(!memoryFree(&image))
+        return false;
 
     resizeRatio = 1.0;
     size = {0};
