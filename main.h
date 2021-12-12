@@ -38,7 +38,7 @@ struct Vector2
 inline void DebugPrint(const char* str...)
 {
 #if DEBUG
-    std::cout << str << '\n';
+    std::cout << str << '\n';std::cout.flush();
 #endif
 }
 inline void DebugPrint(uint32 number...)

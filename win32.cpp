@@ -40,6 +40,30 @@ bool memoryFree(Memory* memory)
     throw std::bad_alloc();
 }
 
+std::string GetLastErrorAsString()
+{
+    //Get the error message ID, if any.
+    DWORD errorMessageID = ::GetLastError();
+    if(errorMessageID == 0) {
+        return std::string(); //No error message has been recorded
+    }
+
+    LPSTR messageBuffer = nullptr;
+
+    //Ask Win32 to give us the string version of that message ID.
+    //The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+    size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                 NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+    //Copy the error message into a std::string.
+    std::string message(messageBuffer, size);
+
+    //Free the Win32's string's buffer.
+    LocalFree(messageBuffer);
+
+    return message;
+}
+
 void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
 {
     HDC memDc = CreateCompatibleDC(hdc);
@@ -54,13 +78,14 @@ void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
 
     if(isSetting(LAYERED))
     {
+        DebugPrint("paintToScreen layered");
         BLENDFUNCTION blend =  {
         AC_SRC_OVER,
         0,
         isSetting(HALPHA) ? (uint8)0 : globalAlpha,
         AC_SRC_ALPHA
         };
-        UpdateLayeredWindow(
+        int32 resUpdate = UpdateLayeredWindow(
                 window,
                 hdc,
                 0,
@@ -71,6 +96,12 @@ void paintToScreen(HWND window, HDC hdc, void* address, Vector2 size)
                 &blend,
                 ULW_ALPHA
         );
+        if(!resUpdate)
+        {
+            DebugPrint("Layered print failed.");
+            DebugPrint((int32)GetLastError());
+            DebugPrint(GetLastErrorAsString().c_str());
+        }
     }
     else
     {
@@ -168,6 +199,8 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             if(isDown && !wasDown && isSetting(CTRL))
             {
                 globalAlpha = Min(0xFF, globalAlpha + 0xF);
+                if(!isSetting(LAYERED))
+                    SetLayeredWindowAttributes(window, RGB(0,0,0), globalAlpha, LWA_ALPHA);
                 forceUpdate(window);
             }
             if(isDown && !wasDown && isSetting(SHIFT))
@@ -186,6 +219,8 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             if (isDown && !wasDown && isSetting(CTRL))
             {
                 globalAlpha = Max(0x0, globalAlpha - 0xF);
+                if(!isSetting(LAYERED))
+                    SetLayeredWindowAttributes(window, RGB(0,0,0), globalAlpha, LWA_ALPHA);
                 forceUpdate(window);
             }
             if(isDown && !wasDown && isSetting(SHIFT))
@@ -206,12 +241,14 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 if(isSetting(LAYERED))
                 {
                     unsetSetting(LAYERED);
-                    SetWindowLong(window, GWL_EXSTYLE,
-                                  GetWindowLong(window, GWL_EXSTYLE) & (~WS_EX_LAYERED));
+                    // todo change alpha to global ALPHA
+                    SetLayeredWindowAttributes(window, RGB(0,0,0), globalAlpha, LWA_ALPHA);
                 }
                 else
                 {
                     setSetting(LAYERED);
+                    SetWindowLong(window, GWL_EXSTYLE,
+                                  GetWindowLong(window, GWL_EXSTYLE) & (~WS_EX_LAYERED));
                     SetWindowLong(window, GWL_EXSTYLE,
                                   GetWindowLong(window, GWL_EXSTYLE) | WS_EX_LAYERED);
                     defPalette->selectImage(0); // deselect image
@@ -258,7 +295,6 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
 
 }
 LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
-
 {
     LRESULT result = 0;
     switch(message) {
@@ -328,6 +364,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_PAINT:
         {
+            DebugPrint("The print");
             PAINTSTRUCT paintStruct = {};
             HDC deviceContext = BeginPaint(window, &paintStruct);
             paintToScreen(window, deviceContext, defPalette->getImage(), defPalette->getSize());
@@ -440,6 +477,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 {
                     defPalette->movePalette(pictureShift);
                 }
+                DebugPrint("img move");
                 forceUpdate(window);
                 break;
             }
@@ -511,7 +549,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     if(RegisterClassA(&windowClass))
     {
         HWND windowHandle = CreateWindowExA(
-                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST, // TODO WS_EX_NOACTIVATE -- ??
+                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST|WS_EX_LAYERED, // TODO WS_EX_NOACTIVATE -- ??
                 windowClass.lpszClassName,
                 "vv",
                 WS_VISIBLE|WS_POPUP, // WS_POPUP, WS_POPUPWINDOW
@@ -533,6 +571,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
             RegisterHotKey(windowHandle, ALPHATOGGLE, MOD_CONTROL|MOD_WIN, VK_F8);
 
             resizePaletteAndHdc(resolutions[resIndex]);
+            SetLayeredWindowAttributes(windowHandle, RGB(0,0,0), globalAlpha, LWA_ALPHA);
 
             MSG message;
             while(GetMessage( &message, windowHandle, 0, 0 ) > 0)
