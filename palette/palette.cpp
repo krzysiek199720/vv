@@ -388,7 +388,7 @@ void palette::Palette::selectImage(Vector2* position)
     }
 
     selectByVector2(*position);
-    resizePreviewRatio = (*selectedImage)->getImageRatio();
+    resizePreviewRatio = selectedImageId != -1 ? (*selectedImage)->getImageRatio() : 1.0;
     processed = false;
 }
 
