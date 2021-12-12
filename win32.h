@@ -5,6 +5,7 @@
 
 #include "main.h"
 #include "palette/palette.h"
+#include "saveManager.h"
 #include <windows.h>
 
 std::unique_ptr<palette::Palette> defPalette;

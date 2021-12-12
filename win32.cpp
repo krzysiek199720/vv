@@ -2,7 +2,6 @@
 #include <math.h>
 #include <vector>
 
-#include "SaveManager.h"
 #include "win32.h"
 
 Memory memoryAlloc(uint32 size)
@@ -428,6 +427,14 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             if(saveFileId > -1)
             {
                 // process the file - load/parse
+                palette::PaletteData pd{0};
+                bool isLoaded = save::loadSave(dragFiles[saveFileId].c_str(), &pd);
+                if(isLoaded)
+                {
+                    defPalette->setPalette(pd);
+                }
+                else
+                    MessageBoxA(GetWindow(0,0), "Save read failed", "Save open failed", MB_OK);
 
             }
             else
