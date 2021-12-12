@@ -1,5 +1,6 @@
 #include <windowsx.h>
 #include <math.h>
+#include <vector>
 
 #include "win32.h"
 
@@ -376,13 +377,43 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 //            TODO add ability to drop multiple files
             char filename[1024];
             UINT nCount = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, 0, 0);
-            if(nCount > 1)
+            int32 saveFileId = -1;
+            std::vector<std::string> dragFiles = std::vector<std::string>(nCount);
+
+            // get all filenames - not processing them on the spot, because if there is savefile it would mean
+            // unnecessary overhead - also have to process multiple savefiles and only use last one
+            for(uint32 i = 0; i < nCount; ++i)
             {
-                DebugPrint("Too many files");
-                break;
+                // I hope not clearing this filename [] is not gonna f things up
+                DragQueryFile((HDROP)wParam, i, filename, sizeof(filename));
+                auto fln = std::string{filename};
+                if(ends_with(fln, saveFileEnding))
+                {
+                    if(saveFileId != -1)
+                        DebugPrint("Already had save file, using this one.");
+                    saveFileId = i;
+                }
+                else if(!hasSupportedExtension(fln))
+                {
+                    DebugPrint("File has unsupported extension: ", fln.c_str());
+                    continue;
+                }
+
+                dragFiles[i] = fln;
             }
-            DragQueryFile((HDROP)wParam, 0, filename, sizeof(filename));
-            defPalette->addImage(filename);
+
+            // if there is savefile, ignore all other drops
+            if(saveFileId > -1)
+            {
+                // process the file - load/parse
+
+            }
+            else
+            {
+                // no save files
+                for(auto & dragFile : dragFiles)
+                    defPalette->addImage(dragFile);
+            }
 
             forceUpdate(window);
         } break;

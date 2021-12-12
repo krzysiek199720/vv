@@ -4,7 +4,7 @@
 #include "../libraries/stb_image_resize.h"
 
 palette::Image::Image(uint32 newId)
-    :id(newId)
+    :id(newId), imagePath(std::string())
 {
 }
 
@@ -13,26 +13,40 @@ palette::Image::~Image() {
     memoryFree(&image);
 }
 
-void palette::Image::setImage(const char * filename) {
+void palette::Image::setImage(palette::ImageData* imageData)
+{
     stbi_image_free(this->imageRaw);
     int x,y,n;
-    unsigned char *data = stbi_load(filename, &x, &y, &n, CHANNELS);
+    unsigned char *data = stbi_load(imageData->imagePath.c_str(), &x, &y, &n, CHANNELS);
     if(data)
     {
         imageRaw = data;
         sizeRaw = {x, y};
         imageChannels = CHANNELS;
+
+        imagePath = imageData->imagePath;
+        setZindex(imageData->zIndex);
+        offset = imageData->offset;
+        setImageRatio(imageData->resizeRatio);
     }
     else
     {
         DebugPrint("Image get error");
-    }
 
-    resizeRatio = 1.0;
-    size = {0};
+        resizeRatio = 1.0;
+        size = {0};
+
+        image = {0};
+        offset = {0};
+        imagePath = std::string{};
+    }
     memoryFree(&image);
-    image = {0};
-    offset = {0};
+}
+
+void palette::Image::setImage(const char * filename)
+{
+    auto imgD = ImageData{0, std::string(filename), {0,0}, 0, 1.0};
+    setImage(&imgD);
 }
 
 void palette::Image::setImageOffset(Vector2 newOffset) {
@@ -134,4 +148,17 @@ int32 palette::Image::getZindex() const {
 
 float palette::Image::getImageRatio() {
     return resizeRatio;
+}
+
+palette::ImageData palette::Image::getImageData()
+{
+    auto result = palette::ImageData{
+        id,
+        imagePath,
+        offset,
+        zindex,
+        resizeRatio
+    };
+
+    return result;
 }

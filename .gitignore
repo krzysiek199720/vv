@@ -3,6 +3,7 @@ cmake-build-debug/
 cmake-build-release/
 build/
 dlls/
+libraries/boost*/
 
 ### C++ template
 # Prerequisites

@@ -6,6 +6,15 @@
 
 namespace palette
 {
+    struct ImageData
+    {
+        uint32 id;
+        std::string imagePath;
+        Vector2 offset;
+        int32 zIndex;
+        float resizeRatio;
+    };
+
     class Image
     {
     public:
@@ -14,7 +23,7 @@ namespace palette
     public:
         uint32 imageChannels = 0;
         Vector2 offset = {0};
-        const int32 id;
+        const uint32 id;
     protected:
         int32 zindex = 0;
         Vector2 sizeRaw = {0};
@@ -23,8 +32,13 @@ namespace palette
         float resizeRatio = 1.0;
         Vector2 size = {0};
         Memory image = {0};
+
+        std::string imagePath;
     public:
+        ImageData getImageData();
+
         void setImage(const char *);
+        void setImage(palette::ImageData* imageData);
         void setImageOffset(Vector2);
 
         void* getImageRaw(); // raw means loaded image, before transformations

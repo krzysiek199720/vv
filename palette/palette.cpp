@@ -4,7 +4,6 @@
 
 #define RGB2BGR(a_ulColor) ((a_ulColor) & 0xFF000000) | (((a_ulColor) & 0xFF0000) >> 16) | ((a_ulColor) & 0x00FF00) | (((a_ulColor) & 0x0000FF) << 16)
 
-
 void palette::Palette::calculateWriteRegion(Vector2 finalOffset, Vector2 size, Vector2 imageSize,
                           Vector2* palette_write, Vector2* image_read_start,
                           Vector2* image_read_end, Vector2* finalSize)
@@ -206,11 +205,10 @@ bool palette::Palette::zindexSortCmp(const std::shared_ptr<Image> a, const std::
     return  (*a).getZindex() <= (*b).getZindex();
 }
 
-void palette::Palette::addImage(const char * filename)
+void palette::Palette::addImage(ImageData* imageData)
 {
-    std::shared_ptr<Image> image = std::make_shared<Image>(nextId++);
-    image->setImage(filename);
-
+    std::shared_ptr<Image> image = std::make_shared<Image>(imageData->id);
+    image->setImage(imageData);
     images.push_front(image);
 //    FIXME maybe? change sort for a smart insertion to reduce workload
 //    not sure if it is  worthwhile, maybe sort if fast enough
@@ -218,6 +216,19 @@ void palette::Palette::addImage(const char * filename)
 
     selectedImageId = -1;
     processed = false;
+    nextId = imageData->id + 1;
+}
+
+void palette::Palette::addImage(const char * filename)
+{
+    auto imgD = ImageData{nextId, std::string(filename), {0,0}, 0, 1.0};
+    addImage(&imgD);
+}
+
+void palette::Palette::addImage(std::string filename)
+{
+    auto imgD = ImageData{nextId, filename, {0,0}, 0, 1.0};
+    addImage(&imgD);
 }
 
 palette::Palette::Palette(int32 width, int32 height)
@@ -235,6 +246,21 @@ palette::Palette::Palette(int32 width, int32 height)
 palette::Palette::~Palette()
 {
     memoryFree(&paletteMemory);
+}
+
+void palette::Palette::setPalette(PaletteData paletteData)
+{
+    setSize(paletteData.size);
+    offset = paletteData.offset;
+
+    std::list<ImageData>::iterator imageDataIt;
+//    actual image making
+    for (imageDataIt = paletteData.imagesData.begin(); imageDataIt != paletteData.imagesData.end(); ++imageDataIt)
+    {
+        addImage(&(*imageDataIt));
+    }
+
+    processed = false;
 }
 
 Vector2 palette::Palette::getSize()
@@ -474,4 +500,18 @@ bool palette::Palette::setResizePreview(float newRatio) {
 
 bool palette::Palette::changeResizePreview(float ratioChange) {
     return setResizePreview((*selectedImage)->getImageRatio() + ratioChange);
+}
+
+palette::PaletteData palette::Palette::getPaletteData()
+{
+    auto result = PaletteData{};
+    result.size = size;
+    result.offset = offset;
+    result.imagesData = std::list<ImageData>();
+
+    std::list<std::shared_ptr<Image>>::iterator imageIt;
+    for (imageIt = images.begin(); imageIt != images.end(); ++imageIt)
+        result.imagesData.push_back(imageIt->get()->getImageData());
+
+    return result;
 }

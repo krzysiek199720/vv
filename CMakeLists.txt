@@ -9,7 +9,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-add_executable(vv win32.cpp archdef.h libraries/stb_libraries_init.cpp palette/palette.cpp palette/image.cpp)
+include_directories(includes)
+
+add_executable(vv main.cpp win32.cpp archdef.h libraries/stb_libraries_init.cpp palette/palette.cpp palette/image.cpp SaveManager.cpp)
 # static link standard libs
 target_link_libraries(vv Msimg32.lib -static-libgcc -static-libstdc++ -mwindows)
 

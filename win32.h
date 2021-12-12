@@ -10,6 +10,8 @@
 std::unique_ptr<palette::Palette> defPalette;
 BITMAPINFO bitmapInfo;
 
+const std::string saveFileEnding = std::string{".vv"};
+
 uint8 globalAlpha = 0xFF;
 
 #define RESOLUTIONCOUNT 4

@@ -10,6 +10,12 @@
 
 namespace palette
 {
+    struct PaletteData{
+        Vector2 size;
+        Vector2 offset;
+        std::list<ImageData> imagesData;
+    };
+
     class Palette
     {
     public:
@@ -30,8 +36,13 @@ namespace palette
         float resizePreviewRatio = 1.0;
         bool showPreviewRatio = false;
     public:
+        PaletteData getPaletteData();
+        void setPalette(PaletteData);
+
         void* getImage();
         void addImage(const char *);
+        void addImage(std::string);
+        void addImage(ImageData*);
         void deleteImage();
 
         void setSize(Vector2);
