@@ -253,7 +253,7 @@ void palette::Palette::setPalette(PaletteData paletteData)
     setSize(paletteData.size);
     offset = paletteData.offset;
 
-    std::list<ImageData>::iterator imageDataIt;
+    std::vector<ImageData>::iterator imageDataIt;
 //    actual image making
     for (imageDataIt = paletteData.imagesData.begin(); imageDataIt != paletteData.imagesData.end(); ++imageDataIt)
     {
@@ -507,7 +507,7 @@ palette::PaletteData palette::Palette::getPaletteData()
     auto result = PaletteData{};
     result.size = size;
     result.offset = offset;
-    result.imagesData = std::list<ImageData>();
+    result.imagesData = std::vector<ImageData>();
 
     std::list<std::shared_ptr<Image>>::iterator imageIt;
     for (imageIt = images.begin(); imageIt != images.end(); ++imageIt)

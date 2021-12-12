@@ -2,6 +2,7 @@
 #define VV_PALETTE_H
 
 #include <memory>
+#include <vector>
 #include <list>
 
 #include "../main.h"
@@ -13,7 +14,7 @@ namespace palette
     struct PaletteData{
         Vector2 size;
         Vector2 offset;
-        std::list<ImageData> imagesData;
+        std::vector<ImageData> imagesData;
     };
 
     class Palette
@@ -32,7 +33,7 @@ namespace palette
         int32 selectedImageId = -1;
         std::list<std::shared_ptr<Image>>::iterator selectedImage;
 
-        uint32 nextId = 0;
+        uint32 nextId = 1;
         float resizePreviewRatio = 1.0;
         bool showPreviewRatio = false;
     public:

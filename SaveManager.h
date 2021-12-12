@@ -5,11 +5,11 @@
 
 namespace save
 {
-    palette::PaletteData loadSave(std::string filename);
+    palette::PaletteData loadSave(const std::string& filename);
     palette::PaletteData loadSave(const char * filename);
 
-    void createSave(std::string filename);
-    void createSave(const char * filename);
+    void createSave(const std::string& filename, palette::PaletteData);
+    void createSave(const char * filename, palette::PaletteData);
 }
 
 #endif //VV_SAVEMANAGER_H

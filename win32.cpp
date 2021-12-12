@@ -2,6 +2,7 @@
 #include <math.h>
 #include <vector>
 
+#include "SaveManager.h"
 #include "win32.h"
 
 Memory memoryAlloc(uint32 size)
@@ -290,6 +291,27 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
             {
                 defPalette->deleteImage();
                 forceUpdate(window);
+            }
+        }break;
+
+        case 0x53: // letter s
+        {
+            if(isDown && !wasDown)
+            {
+                if(isSetting(CTRL))
+                {
+                    char filename[1024];
+                    OPENFILENAME ofn = OPENFILENAME{0};
+                    ofn.lStructSize = sizeof (OPENFILENAME);
+                    ofn.lpstrFilter = "VVSaves: *.vv\0*.vv\0";
+                    ofn.lpstrFile = filename;
+                    ofn.nMaxFile = 1024;
+                    ofn.Flags = OFN_OVERWRITEPROMPT;
+
+                    int32 gotfile = GetSaveFileName(&ofn);
+                    if(gotfile)
+                        save::createSave(ofn.lpstrFile, defPalette->getPaletteData());
+                }
             }
         }break;
     }
