@@ -8,6 +8,7 @@
 #include "../main.h"
 #include "../archdef.h"
 #include "image.h"
+#include "../libraries/json.hpp"
 
 namespace palette
 {
@@ -15,6 +16,8 @@ namespace palette
         Vector2 size;
         Vector2 offset;
         std::vector<ImageData> imagesData;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(PaletteData, size, offset, imagesData)
     };
 
     class Palette

@@ -3,6 +3,7 @@
 
 #include "../main.h"
 #include "../archdef.h"
+#include "../libraries/json.hpp"
 
 namespace palette
 {
@@ -13,6 +14,8 @@ namespace palette
         Vector2 offset;
         int32 zIndex;
         float resizeRatio;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(ImageData, id, imagePath, offset, zIndex, resizeRatio)
     };
 
     class Image

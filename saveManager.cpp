@@ -4,53 +4,16 @@
 #include "libraries/json.hpp"
 #include <windows.h>
 
+#include "palette/palette.h"
+
 using json = nlohmann::json;
-
-void to_json(json& j, const Vector2& p)
-{
-    j = {{"x", p.x}, {"y", p.y}};
-}
-void from_json(const json& j, Vector2& p) {
-    j.at("x").get_to(p.x);
-    j.at("y").get_to(p.y);
-}
-
-namespace palette{
-    void to_json(json& j, const ImageData& p)
-    {
-        j = {
-            {"id", p.id},
-            {"imagePath", p.imagePath},
-            {"offset", p.offset},
-            {"zIndex", p.zIndex},
-            {"resizeRatio", p.resizeRatio}
-        };
-    }
-    void from_json(const json& j, ImageData& p) {
-        j.at("id").get_to(p.id);
-        j.at("imagePath").get_to(p.imagePath);
-        j.at("offset").get_to(p.offset);
-        j.at("zIndex").get_to(p.zIndex);
-        j.at("resizeRatio").get_to(p.resizeRatio);
-    }
-
-    void from_json(const json& j, PaletteData& p) {
-        j.at("size").get_to(p.size);
-        j.at("offset").get_to(p.offset);
-        j.at("imagesData").get_to(p.imagesData);
-    }
-}
 
 void save::createSave(const char * filename, palette::PaletteData pd)
 {
     // fixme temp
     const char* fn = "D:\\krzych\\Desktop\\sav.vv";
 
-    json root = {
-        {"size", pd.size},
-        {"offset", pd.offset},
-        {"imagesData", pd.imagesData}
-    };
+    json root = pd;
 
     std::string s = to_string(root);
 
@@ -84,7 +47,6 @@ void save::createSave(const char * filename, palette::PaletteData pd)
 
 bool save::loadSave(const char * filename, palette::PaletteData* palette)
 {
-    palette::PaletteData res = palette::PaletteData{0};
     HANDLE file = CreateFileA(
             filename,
             GENERIC_READ,
@@ -134,6 +96,7 @@ bool save::loadSave(const char * filename, palette::PaletteData* palette)
     json j = json::parse(fileValue);
 
     palette::PaletteData pd = j.get<palette::PaletteData>();
+    *palette = pd;
 
     DebugPrint(fileValue.c_str());
 
