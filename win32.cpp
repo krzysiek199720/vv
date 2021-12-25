@@ -242,7 +242,6 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 if(isSetting(LAYERED))
                 {
                     unsetSetting(LAYERED);
-                    // todo change alpha to global ALPHA
                     SetLayeredWindowAttributes(window, RGB(0,0,0), globalAlpha, LWA_ALPHA);
                 }
                 else
@@ -368,6 +367,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
         case WM_CLOSE:
         {
             // TODO do some on close saving
+            // maybe ask if they want to save
 
             DestroyWindow(window);
         } break;
@@ -395,7 +395,6 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
 
         case WM_DROPFILES:
         {
-//            TODO add ability to drop multiple files
             char filename[1024];
             UINT nCount = DragQueryFile((HDROP)wParam, 0xFFFFFFFF, 0, 0);
             int32 saveFileId = -1;
@@ -609,7 +608,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
     if(RegisterClassA(&windowClass))
     {
         HWND windowHandle = CreateWindowExA(
-                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST|WS_EX_LAYERED, // TODO WS_EX_NOACTIVATE -- ??
+                WS_EX_ACCEPTFILES|WS_EX_APPWINDOW|WS_EX_TOPMOST|WS_EX_LAYERED,
                 windowClass.lpszClassName,
                 "vv",
                 WS_VISIBLE|WS_POPUP, // WS_POPUP, WS_POPUPWINDOW
