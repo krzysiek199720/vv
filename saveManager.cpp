@@ -10,15 +10,12 @@ using json = nlohmann::json;
 
 void save::createSave(const char * filename, palette::PaletteData pd)
 {
-    // fixme temp
-    const char* fn = "D:\\krzych\\Desktop\\sav.vv";
-
     json root = pd;
 
     std::string s = to_string(root);
 
     HANDLE file = CreateFileA(
-        fn,
+        filename,
         GENERIC_WRITE,
         0,
         0,

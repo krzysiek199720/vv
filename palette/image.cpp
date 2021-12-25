@@ -34,10 +34,10 @@ void palette::Image::setImage(palette::ImageData* imageData)
         DebugPrint("Image get error");
 
         resizeRatio = 1.0;
-        size = {0};
+        size = {};
 
-        image = {0};
-        offset = {0};
+        image = {};
+        offset = {};
         imagePath = std::string{};
     }
     memoryFree(&image);
@@ -132,7 +132,7 @@ bool palette::Image::resetImageRatio() {
         return false;
 
     resizeRatio = 1.0;
-    size = {0};
+    size = {};
     return true;
 }
 

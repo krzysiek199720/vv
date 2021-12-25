@@ -25,16 +25,16 @@ namespace palette
         ~Image();
     public:
         uint32 imageChannels = 0;
-        Vector2 offset = {0};
+        Vector2 offset = {};
         const uint32 id;
     protected:
         int32 zindex = 0;
-        Vector2 sizeRaw = {0};
+        Vector2 sizeRaw = {};
         void* imageRaw = 0;
 
         float resizeRatio = 1.0;
-        Vector2 size = {0};
-        Memory image = {0};
+        Vector2 size = {};
+        Memory image = {};
 
         std::string imagePath;
     public:

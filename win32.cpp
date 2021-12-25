@@ -6,7 +6,7 @@
 
 Memory memoryAlloc(uint32 size)
 {
-    Memory memory = {0};
+    Memory memory = {};
 
     void* resAdd = VirtualAlloc(
             NULL,
@@ -34,7 +34,7 @@ bool memoryFree(Memory* memory)
         result = true;
     if(result)
     {
-        *memory = {0};
+        *memory = {};
         return true;
     }
     DebugPrint("Failed to release memory");
@@ -300,7 +300,7 @@ void processKeys(HWND window, WPARAM wParam, LPARAM lParam)
                 if(isSetting(CTRL))
                 {
                     char filename[1024];
-                    OPENFILENAME ofn = OPENFILENAME{0};
+                    OPENFILENAME ofn = OPENFILENAME{};
                     ofn.lStructSize = sizeof (OPENFILENAME);
                     ofn.lpstrFilter = "VVSaves: *.vv\0*.vv\0";
                     ofn.lpstrFile = filename;
@@ -427,7 +427,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             if(saveFileId > -1)
             {
                 // process the file - load/parse
-                palette::PaletteData pd{0};
+                palette::PaletteData pd{};
                 bool isLoaded = save::loadSave(dragFiles[saveFileId].c_str(), &pd);
                 if(isLoaded)
                 {
@@ -481,7 +481,7 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
             {
                 unsetSetting(IMGMOVE);
                 // reset move actions
-                moveStartPoint = {0};
+                moveStartPoint = {};
                 break;
             }
             if(isSetting(RESIMG))
@@ -596,7 +596,7 @@ INT WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance,
 {
     defPalette = std::make_unique<palette::Palette>(
             resolutions[resIndex].x, resolutions[resIndex].y);
-    bitmapInfo = BITMAPINFO{0};
+    bitmapInfo = BITMAPINFO{};
 
     WNDCLASSA windowClass = {};
     windowClass.style = CS_HREDRAW|CS_VREDRAW;

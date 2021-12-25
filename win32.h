@@ -40,8 +40,8 @@ void unsetSetting(uint32 key){setting &= ~(key);}
 #define HALPHA  0b010000000 // has alpha
 #define RESIMG  0b100000000 // image resize
 
-Vector2 moveStartPoint = {0}; // used for both palette move and img resize
-Vector2 movePrePoint = {0};
+Vector2 moveStartPoint = {}; // used for both palette move and img resize
+Vector2 movePrePoint = {};
 
 // hotkeys
 #define GETFOCUSHK 1

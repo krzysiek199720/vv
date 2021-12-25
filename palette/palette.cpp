@@ -47,7 +47,7 @@ void * palette::Palette::getImage()
     {
 //        Get info and check if need to be rendered
         std::shared_ptr<Image> image = (*imageIt);
-        Vector2 imageSize = {0};
+        Vector2 imageSize = {};
         void* imageAddress = (*imageIt)->getImage(&imageSize);
 
         Vector2 finalOffset = {offset.x + image->offset.x, offset.y + image->offset.y};
@@ -58,10 +58,10 @@ void * palette::Palette::getImage()
         if(fitsX && fitsY)
         {
 //            Calculate renderable image portions
-            Vector2 palette_write = {0};
-            Vector2 image_read_start = {0};
-            Vector2 image_read_end = {0};
-            Vector2 pixels_count = {0};
+            Vector2 palette_write = {};
+            Vector2 image_read_start = {};
+            Vector2 image_read_end = {};
+            Vector2 pixels_count = {};
 
             calculateWriteRegion(finalOffset, size, imageSize,
                                  &palette_write, &image_read_start,
