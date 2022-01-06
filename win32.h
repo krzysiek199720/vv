@@ -15,6 +15,8 @@ const std::string saveFileEnding = std::string{".vv"};
 
 uint8 globalAlpha = 0xFF;
 
+// note: for now resolutions are not dynamic, and must be placed in resolutions array
+// in ascending order
 #define RESOLUTIONCOUNT 4
 Vector2 resolutions[RESOLUTIONCOUNT] = {
         {848, 480},

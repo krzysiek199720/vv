@@ -47,6 +47,8 @@ struct Vector2
     static Vector2 add(Vector2 v1, Vector2 v2){return {v1.x + v2.x, v1.y + v2.y};}
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Vector2, x, y)
+
+    static int64 compare(Vector2 v1, Vector2 v2);
 };
 
 

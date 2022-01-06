@@ -430,6 +430,23 @@ LRESULT CALLBACK MainWindowCallback(HWND window, UINT message, WPARAM wParam, LP
                 bool isLoaded = save::loadSave(dragFiles[saveFileId].c_str(), &pd);
                 if(isLoaded)
                 {
+                    int8 newIndex = -1;
+                    for (int i = 0; i < RESOLUTIONCOUNT; ++i) {
+                        int64 resCmp = Vector2::compare(pd.size, resolutions[i]);
+                        if(resCmp == 0)
+                        {
+                            newIndex = i;
+                            break;
+                        }
+                        if(resCmp < 0 && newIndex != -1)
+                            newIndex = i;
+
+                    }
+                    if(newIndex != resIndex)
+                    {
+                        resIndex = newIndex;
+                        resizeWindow(window, resolutions[resIndex]);
+                    }
                     defPalette->setPalette(pd);
                 }
                 else
