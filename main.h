@@ -35,6 +35,8 @@ struct Memory
 {
     uint32 size;
     void* address;
+
+    operator bool() const {return address != 0;}
 };
 
 Memory memoryAlloc(uint32 size);

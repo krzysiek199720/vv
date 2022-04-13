@@ -36,11 +36,11 @@ void palette::Image::setImage(palette::ImageData* imageData)
         resizeRatio = 1.0;
         size = {};
 
+        if(image) memoryFree(&image);
         image = {};
         offset = {};
         imagePath = std::string{};
     }
-    memoryFree(&image);
 }
 
 void palette::Image::setImage(const char * filename)
