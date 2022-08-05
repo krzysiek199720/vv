@@ -44,10 +44,11 @@ namespace palette
         void setPalette(PaletteData);
 
         void* getImage();
-        void addImage(const char *);
-        void addImage(std::string);
-        void addImage(ImageData*);
+        uint32 addImage(const char *);
+        uint32 addImage(std::string);
+        uint32 addImage(ImageData*);
         void deleteImage();
+        void deleteImage(uint32);
 
         void setSize(Vector2);
         Vector2 getSize();

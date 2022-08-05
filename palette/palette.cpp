@@ -205,7 +205,7 @@ bool palette::Palette::zindexSortCmp(const std::shared_ptr<Image> a, const std::
     return  (*a).getZindex() <= (*b).getZindex();
 }
 
-void palette::Palette::addImage(ImageData* imageData)
+uint32 palette::Palette::addImage(ImageData* imageData)
 {
     std::shared_ptr<Image> image = std::make_shared<Image>(imageData->id);
     image->setImage(imageData);
@@ -217,18 +217,20 @@ void palette::Palette::addImage(ImageData* imageData)
     selectedImageId = -1;
     processed = false;
     nextId = imageData->id + 1;
+
+    return imageData->id;
 }
 
-void palette::Palette::addImage(const char * filename)
+uint32 palette::Palette::addImage(const char * filename)
 {
     auto imgD = ImageData{nextId, std::string(filename), {0,0}, 0, 1.0};
-    addImage(&imgD);
+    return addImage(&imgD);
 }
 
-void palette::Palette::addImage(std::string filename)
+uint32 palette::Palette::addImage(std::string filename)
 {
     auto imgD = ImageData{nextId, filename, {0,0}, 0, 1.0};
-    addImage(&imgD);
+    return addImage(&imgD);
 }
 
 palette::Palette::Palette(int32 width, int32 height)
@@ -471,6 +473,18 @@ void palette::Palette::deleteImage()
         selectedImageId = -1;
         processed = false;
     }
+}
+
+void palette::Palette::deleteImage(uint32 id)
+{
+    std::list<std::shared_ptr<Image>>::iterator imageIt;
+    for (imageIt = images.begin(); imageIt != images.end(); ++imageIt)
+        if(imageIt->get()->id == id)
+        {
+            break;
+        }
+    images.erase(imageIt);
+    processed = false;
 }
 
 void palette::Palette::changeZindex(int32 change)
